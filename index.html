@@ -6,59 +6,101 @@
     <title>MatrixGram Elite</title>
     <style>
         :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #f0f2f5; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        /* Auth Screen Styling */
+        #auth-view { display: none; width: 100%; max-width: 400px; margin-top: 80px; padding: 20px; box-sizing: border-box; }
+        .auth-card { background: white; padding: 30px; border-radius: 12px; border: 1px solid #dbdbdb; text-align: center; }
+        
+        /* Main App Styling */
+        #app-view { display: none; width: 100%; max-width: 500px; padding: 15px; box-sizing: border-box; }
         .navbar { background: white; border-bottom: 1px solid #dbdbdb; width: 100%; padding: 10px 0; position: sticky; top: 0; display: flex; justify-content: center; z-index: 100; }
         .nav-content { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; }
-        #app-view { width: 100%; max-width: 500px; padding: 15px; box-sizing: border-box; }
-        .search-box { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #dbdbdb; border-radius: 8px; box-sizing: border-box; outline: none; }
+        
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #dbdbdb; border-radius: 8px; box-sizing: border-box; outline: none; }
+        .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-sec { background: none; color: var(--accent); border: none; margin-top: 10px; cursor: pointer; }
+
         .post { background: white; border: 1px solid #dbdbdb; border-radius: 12px; margin-bottom: 15px; padding: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 12px; background: #eee; border: 1px solid #ddd; }
-        .action-btn { background: none; border: none; cursor: pointer; font-weight: bold; color: #65676b; display: flex; align-items: center; gap: 5px; }
-        .liked { color: #f3425f; }
+        .avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 12px; background: #eee; }
+        .liked { color: #f3425f !important; }
         #profile-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; padding: 25px; box-sizing: border-box; }
-        textarea { width: 100%; border: 1px solid #eee; border-radius: 8px; padding: 10px; margin-bottom: 10px; resize: none; font-size: 15px; }
     </style>
 </head>
 <body>
 
-<div class="navbar">
+<div id="nav-bar" class="navbar" style="display:none;">
     <div class="nav-content">
         <b style="color:var(--primary); font-size:1.4rem;">MatrixGram</b>
-        <img id="my-avatar" src="" style="width:32px; height:32px; border-radius:50%; cursor:pointer; border: 2px solid var(--primary);" onclick="openProfile()">
+        <img id="my-avatar" src="" style="width:32px; height:32px; border-radius:50%; cursor:pointer; border: 2px solid var(--primary);" onclick="toggleProfile(true)">
+    </div>
+</div>
+
+<div id="auth-view">
+    <div class="auth-card">
+        <h2 style="color:var(--primary)">MatrixGram</h2>
+        <p id="auth-msg" style="font-size:14px; color:#666;">Login to your account</p>
+        <input type="text" id="auth-user" placeholder="Username">
+        <input type="password" id="auth-pass" placeholder="Password">
+        <button class="btn" onclick="handleAuth()">Continue</button>
     </div>
 </div>
 
 <div id="app-view">
-    <input type="text" id="searchInput" class="search-box" placeholder="🔍 Search people or posts..." onkeyup="render()">
+    <input type="text" id="searchInput" placeholder="🔍 Search posts or people..." onkeyup="render()">
     
     <div style="background:white; padding:15px; border-radius:12px; margin-bottom:15px; border: 1px solid #dbdbdb;">
-        <textarea id="postText" rows="2" placeholder="What's happening?"></textarea>
-        <button onclick="sendPost()" style="width:100%; padding:10px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Post to Matrix</button>
+        <textarea id="postText" rows="2" placeholder="Share something..."></textarea>
+        <button class="btn" onclick="sendPost()">Post</button>
     </div>
     
     <div id="feed"></div>
 </div>
 
 <div id="profile-page">
-    <button onclick="closeProfile()" style="border:none; background:none; color:var(--accent); font-weight:bold; font-size:16px;">← Back</button>
-    <h2 style="margin-top:20px;">Edit Profile</h2>
-    <input type="text" id="edit-name" placeholder="Display Name" style="width:100%; padding:12px; margin-bottom:15px; border:1px solid #ddd; border-radius:8px;">
-    <input type="text" id="edit-pic" placeholder="Avatar URL (https://...)" style="width:100%; padding:12px; margin-bottom:15px; border:1px solid #ddd; border-radius:8px;">
-    <button onclick="saveProfile()" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:bold;">Save Changes</button>
-    <button onclick="logout()" style="width:100%; margin-top:40px; color:#f3425f; background:none; border:none; cursor:pointer; font-weight:bold;">Log Out</button>
+    <button onclick="toggleProfile(false)" style="border:none; background:none; color:var(--accent); font-weight:bold;">← Back</button>
+    <h2>Settings</h2>
+    <input type="text" id="edit-name" placeholder="Display Name">
+    <input type="text" id="edit-pic" placeholder="Avatar URL">
+    <button class="btn" style="background:var(--primary)" onclick="saveProfile()">Save Profile</button>
+    <button class="btn-sec" onclick="logout()" style="color:red; margin-top:30px;">Log Out</button>
 </div>
 
 <script>
-    const SHIELD = "https://matrixgram-pro.onrender.com"; 
+    const SHIELD = "https://matrixgram-pro.onrender.com"; // Your Render URL
     let state = { feed: [], profiles: {}, likes: {} };
+
+    // PAGE LOAD LOGIC
+    window.onload = () => {
+        if(localStorage.getItem('app_user')) {
+            showApp();
+        } else {
+            document.getElementById('auth-view').style.display = 'block';
+        }
+    };
+
+    function showApp() {
+        document.getElementById('auth-view').style.display = 'none';
+        document.getElementById('nav-bar').style.display = 'flex';
+        document.getElementById('app-view').style.display = 'block';
+        syncData();
+        setInterval(syncData, 10000); 
+    }
+
+    // AUTH HANDLER (Mock login - uses local storage for simplicity)
+    function handleAuth() {
+        const user = document.getElementById('auth-user').value.trim();
+        if(user) {
+            localStorage.setItem('app_user', user);
+            showApp();
+        }
+    }
 
     async function syncData() {
         try {
             const res = await fetch(`${SHIELD}/api/sync`);
             const data = await res.json();
             state.feed = data.feed;
-            
-            // Clear current data sets before rebuilding from Metadata Room
             state.likes = {};
             state.profiles = {};
 
@@ -68,21 +110,17 @@
                     state.profiles[p[0].split(' ')[1]] = { name: p[1], pic: p[3] };
                 } else if(m.includes("[LIKE]")) {
                     const parts = m.split('[LIKE] ')[1].split(' | ');
-                    const postID = parts[0];
-                    const user = parts[1];
-                    if(!state.likes[postID]) state.likes[postID] = new Set();
-                    state.likes[postID].add(user);
+                    if(!state.likes[parts[0]]) state.likes[parts[0]] = new Set();
+                    state.likes[parts[0]].add(parts[1]);
                 }
             });
             render();
-        } catch(e) { console.error("Sync error"); }
+        } catch(e) { console.error("Sync failed"); }
     }
 
     function render() {
         const curr = localStorage.getItem('app_user');
         const q = document.getElementById('searchInput').value.toLowerCase();
-        
-        // Update Nav Avatar
         document.getElementById('my-avatar').src = state.profiles[curr]?.pic || `https://ui-avatars.com/api/?name=${curr}`;
 
         const html = state.feed.filter(p => {
@@ -97,21 +135,18 @@
 
             return `
                 <div class="post">
-                    <div style="display:flex; align-items:center; margin-bottom:12px;">
+                    <div style="display:flex; align-items:center; margin-bottom:10px;">
                         <img src="${prof.pic || 'https://ui-avatars.com/api/?name='+user}" class="avatar-img" onerror="this.src='https://ui-avatars.com/api/?name=${user}'">
-                        <div>
-                            <div style="font-weight:bold;">${prof.name || user}</div>
-                            <div style="font-size:11px; color:#999;">Matrix Social Post</div>
-                        </div>
+                        <b>${prof.name || user}</b>
                     </div>
-                    <div style="font-size:15px; color:#1c1e21; line-height:1.4;">${content}</div>
-                    <div style="margin-top:12px; border-top:1px solid #f0f2f5; padding-top:10px;">
-                        <button class="action-btn ${likes.has(curr) ? 'liked' : ''}" onclick="like('${p.id}')">❤️ ${likes.size}</button>
-                    </div>
-                </div>
-            `;
+                    <div>${content}</div>
+                    <button style="background:none; border:none; cursor:pointer; margin-top:10px;" 
+                            class="${likes.has(curr) ? 'liked' : ''}" onclick="like('${p.id}')">
+                        ❤️ ${likes.size}
+                    </button>
+                </div>`;
         }).join('');
-        document.getElementById('feed').innerHTML = html || "<center style='color:#999; margin-top:20px;'>No posts found.</center>";
+        document.getElementById('feed').innerHTML = html;
     }
 
     async function sendPost() {
@@ -125,43 +160,25 @@
     }
 
     async function like(id) {
-        const u = localStorage.getItem('app_user');
-        // Likes now go to the HIDDEN Metadata Room
         await fetch(`${SHIELD}/api/share`, {
             method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ isSystem: true, message: `[LIKE] ${id} | ${u}` })
+            body: JSON.stringify({ isSystem: true, message: `[LIKE] ${id} | ${localStorage.getItem('app_user')}` })
         });
         syncData();
     }
 
     async function saveProfile() {
         const u = localStorage.getItem('app_user');
-        const name = document.getElementById('edit-name').value;
-        const pic = document.getElementById('edit-pic').value;
-        // Profile updates now go to the HIDDEN Metadata Room
+        const msg = `[FULL_PROF] ${u} | ${document.getElementById('edit-name').value} | bio | ${document.getElementById('edit-pic').value} | 0 | 0 | 0 | 0`;
         await fetch(`${SHIELD}/api/share`, {
             method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ isSystem: true, message: `[FULL_PROF] ${u} | ${name} | bio | ${pic} | 0 | 0 | 0 | 0` })
+            body: JSON.stringify({ isSystem: true, message: msg })
         });
-        closeProfile(); syncData();
+        toggleProfile(false); syncData();
     }
 
-    function logout() {
-        localStorage.clear();
-        window.location.href = "index.html"; 
-    }
-
-    function openProfile() { document.getElementById('profile-page').style.display='block'; }
-    function closeProfile() { document.getElementById('profile-page').style.display='none'; }
-    
-    window.onload = () => { 
-        if(localStorage.getItem('app_user')) {
-            syncData();
-            setInterval(syncData, 10000); // Auto-refresh every 10 seconds
-        } else {
-            location.href='login.html'; 
-        }
-    };
+    function logout() { localStorage.clear(); location.reload(); }
+    function toggleProfile(show) { document.getElementById('profile-page').style.display = show ? 'block' : 'none'; }
 </script>
 </body>
 </html>
