@@ -7,12 +7,13 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// CONFIGURATION FROM YOUR .ENV
 const TOKEN = process.env.MATRIX_ADMIN_TOKEN;
-const FEED_ROOM = process.env.MATRIX_ROOM_ID; 
-const DATA_ROOM = process.env.MATRIX_METADATA_ROOM_ID; // The ID from your new room
+const FEED_ROOM = process.env.MATRIX_ROOM_ID;          // Main visible posts
+const DATA_ROOM = process.env.MATRIX_METADATA_ROOM_ID; // Hidden Likes/Profiles
 const BASE_URL = "https://matrix.org/_matrix/client/r0";
 
-// NEW: This endpoint pulls from both rooms to separate "Display" from "Data"
+// 1. SYNC: Pulls data from both rooms
 app.get('/api/sync', async (req, res) => {
     try {
         const [feedRes, dataRes] = await Promise.all([
@@ -34,13 +35,13 @@ app.get('/api/sync', async (req, res) => {
             .map(m => m.content.body);
 
         res.json({ feed, metadata });
-    } catch (err) { res.status(500).json({ error: "Dual-sync failed" }); }
+    } catch (err) { res.status(500).json({ error: "Sync failed" }); }
 });
 
+// 2. SHARE: Routes message to the correct room
 app.post('/api/share', async (req, res) => {
     try {
         const { username, message, isSystem } = req.body;
-        // Logic: System messages go to the private room, posts go to the public room
         const targetRoom = isSystem ? DATA_ROOM : FEED_ROOM;
         const body = isSystem ? message : `${username} [IP:Hidden]: ${message}`;
 
@@ -49,15 +50,32 @@ app.post('/api/share', async (req, res) => {
             msgtype: "m.text"
         });
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: "Messaging failed" }); }
+    } catch (err) { res.status(500).json({ error: "Post failed" }); }
 });
 
+// 3. DELETE: Redacts a single event
 app.delete('/api/delete/:eventId', async (req, res) => {
     try {
         await axios.put(`${BASE_URL}/rooms/${encodeURIComponent(FEED_ROOM)}/redact/${req.params.eventId}/${Date.now()}?access_token=${TOKEN}`, {});
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: "Deletion failed" }); }
+    } catch (err) { res.status(500).json({ error: "Delete failed" }); }
+});
+
+// 4. ADMIN PURGE: Cleans "Ghost Logs" from the main feed
+app.post('/api/admin/purge', async (req, res) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/rooms/${encodeURIComponent(FEED_ROOM)}/messages?limit=1000&dir=b&access_token=${TOKEN}`);
+        const ghosts = response.data.chunk.filter(m => {
+            const body = m.content.body || "";
+            return body.startsWith("[") || m.sender.includes("SYS_");
+        });
+
+        for (let ghost of ghosts) {
+            await axios.put(`${BASE_URL}/rooms/${encodeURIComponent(FEED_ROOM)}/redact/${ghost.event_id}/${Date.now()}?access_token=${TOKEN}`, {});
+        }
+        res.json({ success: true, count: ghosts.length });
+    } catch (err) { res.status(500).json({ error: "Purge failed" }); }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`MatrixGram Database Engine: Online`));
+app.listen(PORT, () => console.log(`Shield Server Online on Port ${PORT}`));
