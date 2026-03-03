@@ -8,113 +8,99 @@
         :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
         .navbar { background: white; border-bottom: 1px solid #dbdbdb; width: 100%; padding: 15px 0; position: sticky; top: 0; text-align: center; font-weight: bold; color: var(--primary); z-index: 100; }
-        
         #app-view, #login-view { width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; }
         .card { background: white; border: 1px solid #dbdbdb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        
         input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        
-        .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; text-align: left; }
-        .post-user { font-weight: bold; color: var(--primary); margin-bottom: 5px; display: block; }
-        #status { font-size: 12px; color: #999; margin: 10px; }
+        .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
+        .post-user { font-weight: bold; color: var(--primary); }
+        .toggle-link { text-align: center; font-size: 14px; color: var(--accent); cursor: pointer; display: block; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="navbar">MatrixGram Stealth</div>
-<div id="status">Connecting to Shield...</div>
 
 <div id="login-view">
     <div class="card">
-        <h2>Welcome</h2>
-        <input type="text" id="usernameInput" placeholder="Enter a Username">
-        <button class="btn" onclick="startApp()">Enter App</button>
+        <h2 id="auth-title">Login</h2>
+        <input type="text" id="userInput" placeholder="Username">
+        <input type="password" id="passInput" placeholder="Password">
+        <button class="btn" id="authBtn" onclick="handleAuth()">Enter</button>
+        <span class="toggle-link" onclick="toggleAuth()">New here? Register</span>
     </div>
 </div>
 
 <div id="app-view" style="display:none;">
     <div class="card">
-        <textarea id="postText" rows="2" placeholder="Share something..."></textarea>
-        <button class="btn" id="sendBtn" onclick="sharePost()">Post to Feed</button>
+        <textarea id="postText" rows="2" placeholder="What's on your mind?"></textarea>
+        <button class="btn" id="sendBtn" onclick="sharePost()">Post</button>
     </div>
     <div id="feed"></div>
-    <button onclick="logout()" style="background:none; border:none; color:#999; width:100%; margin-top:20px; cursor:pointer;">Logout</button>
+    <button onclick="logout()" style="background:none; border:none; color:#999; width:100%; cursor:pointer; margin-top:20px;">Logout</button>
 </div>
 
 <script>
-    // 1. YOUR ADMIN SHIELD URL (Get this after deploying to Render)
+    // REPLACE THIS WITH YOUR ACTUAL RENDER URL
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
+    let isLoginMode = true;
 
-    // Check if user is already "logged in" locally
-    window.onload = () => {
-        const savedUser = localStorage.getItem('app_user');
-        if (savedUser) showApp();
-    };
+    window.onload = () => { if(localStorage.getItem('app_user')) showApp(); };
 
-    function startApp() {
-        const user = document.getElementById('usernameInput').value.trim();
-        if (!user) return alert("Please enter a username");
-        localStorage.setItem('app_user', user);
-        showApp();
+    function toggleAuth() {
+        isLoginMode = !isLoginMode;
+        document.getElementById('auth-title').innerText = isLoginMode ? "Login" : "Register";
+        document.getElementById('authBtn').innerText = isLoginMode ? "Login" : "Register";
+    }
+
+    async function handleAuth() {
+        const username = document.getElementById('userInput').value;
+        const password = document.getElementById('passInput').value;
+        const path = isLoginMode ? '/api/login' : '/api/register';
+
+        const res = await fetch(`${SHIELD_URL}${path}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (res.ok) {
+            localStorage.setItem('app_user', username);
+            showApp();
+        } else {
+            alert("Auth Failed: Check credentials or if user exists.");
+        }
     }
 
     function showApp() {
         document.getElementById('login-view').style.display = 'none';
         document.getElementById('app-view').style.display = 'block';
         loadFeed();
-        // Refresh feed every 30 seconds
-        setInterval(loadFeed, 30000);
     }
 
-    // 2. THE STEALTH FEED FETCH
     async function loadFeed() {
-        const status = document.getElementById('status');
-        try {
-            const res = await fetch(`${SHIELD_URL}/api/feed`);
-            const posts = await res.json();
-            
-            const feedDiv = document.getElementById('feed');
-            feedDiv.innerHTML = posts.map(p => `
-                <div class="post">
-                    <span class="post-user">@${p.user}</span>
-                    <div>${p.text}</div>
-                </div>
-            `).join('');
-            status.innerText = "Feed Updated";
-        } catch (e) {
-            status.innerText = "Shield Offline. Check Render logs.";
-        }
+        const res = await fetch(`${SHIELD_URL}/api/feed`);
+        const posts = await res.json();
+        document.getElementById('feed').innerHTML = posts.map(p => `
+            <div class="post">
+                <span class="post-user">@${p.user}</span>
+                <p>${p.text}</p>
+            </div>
+        `).join('');
     }
 
-    // 3. THE STEALTH SHARE
     async function sharePost() {
         const text = document.getElementById('postText').value;
         const user = localStorage.getItem('app_user');
-        const btn = document.getElementById('sendBtn');
+        if(!text.trim()) return;
 
-        if (!text.trim()) return;
-        
-        btn.disabled = true;
-        btn.innerText = "Posting...";
-
-        try {
-            const res = await fetch(`${SHIELD_URL}/api/share`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: user, message: text })
-            });
-
-            if (res.ok) {
-                document.getElementById('postText').value = "";
-                loadFeed();
-            }
-        } catch (e) {
-            alert("Shield Error: Could not post.");
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "Post to Feed";
-        }
+        await fetch(`${SHIELD_URL}/api/share`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: user, message: text })
+        });
+        document.getElementById('postText').value = "";
+        loadFeed();
     }
 
     function logout() { localStorage.clear(); location.reload(); }
