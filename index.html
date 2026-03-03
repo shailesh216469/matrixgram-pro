@@ -7,37 +7,26 @@
     <style>
         :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
-        
-        /* NAVBAR & TOP NAV */
         .navbar { background: white; border-bottom: 1px solid #dbdbdb; width: 100%; padding: 15px 0; position: sticky; top: 0; text-align: center; font-weight: bold; color: var(--primary); z-index: 100; }
         .top-right-nav { position: absolute; top: 10px; right: 15px; cursor: pointer; z-index: 101; }
         .nav-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; background: #eee; }
-
         #app-view, #login-view { width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; }
         .card { background: white; border: 1px solid #dbdbdb; padding: 20px; border-radius: 8px; margin-bottom: 20px; position: relative; }
         input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        
-        /* FULL PROFILE PAGE */
         #profile-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 4px; }
-        .back-btn { background: none; border: none; color: var(--accent); font-size: 16px; cursor: pointer; margin-bottom: 20px; font-weight: bold; }
-
-        /* POSTS */
         .avatar-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #ddd; }
         .user-bio { font-size: 11px; color: #777; margin-top: 2px; }
         .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
         .post-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .post-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px solid #f5f5f5; }
-        .like-btn { background: #fff0f0; border: 1px solid #ffccd5; border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 13px; color: #ff4d4d; font-weight: bold; }
-        
-        /* ADMIN PANEL */
+        .like-btn { border: 1px solid #ffccd5; border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 13px; font-weight: bold; transition: all 0.2s; }
         .admin-panel { background: #1a1a1a; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #555; margin-right: 5px; }
         .online { background: #0dbd8b; box-shadow: 0 0 8px #0dbd8b; }
-        .sync-btn { background: #333; color: #0dbd8b; border: 1px solid #444; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; float: right; font-weight: bold; }
-        
+        .sync-btn { background: #333; color: #0dbd8b; border: 1px solid #444; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; float: right; }
         .loader { text-align: center; color: #888; padding: 40px; font-style: italic; }
     </style>
 </head>
@@ -63,15 +52,11 @@
 <div id="app-view" style="display:none;">
     <div id="admin-controls" class="admin-panel">
         <button class="sync-btn" onclick="loadFeed()">FORCE SYNC</button>
-        <div style="font-size:12px; margin-bottom:8px;">
-            <span id="dot" class="status-dot"></span> 
-            <span id="status-text">Shield Status</span>
-        </div>
-        <input type="text" id="searchBar" placeholder="Search Matrix Logs..." onkeyup="filterFeed()" style="background:#222; color:white; border:none; padding:8px; margin:0;">
+        <div style="font-size:12px; margin-bottom:8px;"><span id="dot" class="status-dot"></span> <span id="status-text">Shield Status</span></div>
+        <input type="text" id="searchBar" placeholder="Search Matrix Logs..." onkeyup="filterFeed()" style="background:#222; color:white; border:none; padding:8px;">
     </div>
 
     <div class="card">
-        <span style="font-weight:bold; font-size: 14px; display: block; margin-bottom: 8px;">Create Post</span>
         <textarea id="postText" rows="2" placeholder="What's on your mind?"></textarea>
         <button class="btn" onclick="sharePost()">Post to Matrix</button>
     </div>
@@ -81,60 +66,37 @@
 </div>
 
 <div id="profile-page">
-    <button class="back-btn" onclick="closeProfilePage()">← Back to Feed</button>
-    <h2 style="margin-top:0;">Account Settings</h2>
-    
-    <div class="form-group">
-        <label>Display Name</label>
-        <input type="text" id="edit-name" placeholder="Full Name">
-    </div>
-    <div class="form-group">
-        <label>Username</label>
-        <input type="text" id="edit-username" readonly style="background:#f0f0f0; color:#888;">
-    </div>
-    <div class="form-group">
-        <label>Profile Picture URL</label>
-        <input type="text" id="edit-dp" placeholder="Link to image (Imgur/Pinterest)">
-    </div>
-    <div class="form-group">
-        <label>Bio</label>
-        <textarea id="edit-bio" placeholder="Something about you..."></textarea>
-    </div>
-    <div class="form-group">
-        <label>Date of Birth</label>
-        <input type="date" id="edit-dob">
-    </div>
+    <button onclick="closeProfilePage()" style="background:none; border:none; color:var(--accent); cursor:pointer;">← Back</button>
+    <h2>Account Settings</h2>
+    <div class="form-group"><label>Display Name</label><input type="text" id="edit-name"></div>
+    <div class="form-group"><label>Username</label><input type="text" id="edit-username" readonly></div>
+    <div class="form-group"><label>Avatar URL</label><input type="text" id="edit-dp"></div>
+    <div class="form-group"><label>Bio</label><textarea id="edit-bio"></textarea></div>
+    <div class="form-group"><label>DOB</label><input type="date" id="edit-dob"></div>
     <div class="form-group" style="display:flex; gap:10px;">
-        <div style="flex:1;"><label>City</label><input type="text" id="edit-city"></div>
-        <div style="flex:1;"><label>State</label><input type="text" id="edit-state"></div>
-        <div style="flex:1;"><label>Country</label><input type="text" id="edit-country"></div>
+        <input type="text" id="edit-city" placeholder="City">
+        <input type="text" id="edit-country" placeholder="Country">
     </div>
-    
-    <button class="btn" onclick="saveFullProfile()" style="background:var(--primary); margin-top:10px;">Save All Changes</button>
+    <button class="btn" onclick="saveFullProfile()">Save Profile</button>
 </div>
 
 <script>
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
     const ADMIN_USER = "shailesh2164"; 
-    let allPosts = [], userProfiles = {}, postLikes = {}, postViews = {}, isLoginMode = true;
+    let allPosts = [], userProfiles = {}, postLikes = {}, postViews = {};
 
     window.onload = () => { if(localStorage.getItem('app_user')) showApp(); };
 
-    function toggleAuth() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('auth-title').innerText = isLoginMode ? "Login" : "Register";
-    }
+    function toggleAuth() { document.getElementById('auth-title').innerText = "Register"; }
 
     async function handleAuth() {
         const u = document.getElementById('userInput').value, p = document.getElementById('passInput').value;
-        const path = isLoginMode ? '/api/login' : '/api/register';
-        const res = await fetch(`${SHIELD_URL}${path}`, {
+        const res = await fetch(`${SHIELD_URL}/api/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: u, password: p })
         });
-        if (res.ok) { localStorage.setItem('app_user', u); showApp(); }
-        else alert("Auth Failed");
+        if (res.ok) { localStorage.setItem('app_user', u); showApp(); } else alert("Auth Failed");
     }
 
     function showApp() {
@@ -144,156 +106,97 @@
         loadFeed();
     }
 
-    /* PROFILE PAGE LOGIC */
     function openProfilePage() {
-        const user = localStorage.getItem('app_user');
         document.getElementById('profile-page').style.display = 'block';
-        const p = userProfiles[user] || {};
-        document.getElementById('edit-username').value = user;
+        const u = localStorage.getItem('app_user'), p = userProfiles[u] || {};
+        document.getElementById('edit-username').value = u;
         document.getElementById('edit-name').value = p.name || "";
         document.getElementById('edit-dp').value = p.avatar || "";
         document.getElementById('edit-bio').value = p.bio || "";
-        document.getElementById('edit-dob').value = p.dob || "";
-        document.getElementById('edit-city').value = p.city || "";
-        document.getElementById('edit-state').value = p.state || "";
-        document.getElementById('edit-country').value = p.country || "";
     }
 
     function closeProfilePage() { document.getElementById('profile-page').style.display = 'none'; }
 
     async function saveFullProfile() {
         const u = localStorage.getItem('app_user');
-        const msg = `[FULL_PROF] ${u} | ${document.getElementById('edit-name').value} | ${document.getElementById('edit-bio').value} | ${document.getElementById('edit-dp').value} | ${document.getElementById('edit-dob').value} | ${document.getElementById('edit-city').value} | ${document.getElementById('edit-state').value} | ${document.getElementById('edit-country').value}`;
+        const msg = `[FULL_PROF] ${u} | ${document.getElementById('edit-name').value} | ${document.getElementById('edit-bio').value} | ${document.getElementById('edit-dp').value} | ${document.getElementById('edit-dob').value} | ${document.getElementById('edit-city').value} | 0 | ${document.getElementById('edit-country').value}`;
+        await fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: "SYS_DATA", message: msg }) });
+        closeProfilePage(); loadFeed();
+    }
+
+    async function sendLike(id) {
+        const user = localStorage.getItem('app_user');
+        if (postLikes[id] && postLikes[id].has(user)) return; // Prevent double click
         
         await fetch(`${SHIELD_URL}/api/share`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: "SYS_DATA", message: msg })
-        });
-        alert("Profile Synced to Matrix!");
-        closeProfilePage();
-        loadFeed();
-    }
-
-    async function sendLike(id) {
-        await fetch(`${SHIELD_URL}/api/share`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: "SYS_LIKE", message: `[LIKE] ${id}` })
+            body: JSON.stringify({ username: "SYS_LIKE", message: `[LIKE] ${id} | ${user}` })
         });
         loadFeed();
-    }
-
-    async function trackRead(id) {
-        const user = localStorage.getItem('app_user');
-        if(user === ADMIN_USER) return; 
-        fetch(`${SHIELD_URL}/api/share`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: "SYS_READ", message: `[READ] ${id} | ${user}` })
-        });
     }
 
     async function loadFeed() {
         const feedEl = document.getElementById('feed');
-        feedEl.innerHTML = '<div class="loader">Accessing Matrix Shield...</div>';
+        feedEl.innerHTML = '<div class="loader">Syncing...</div>';
         try {
             const res = await fetch(`${SHIELD_URL}/api/feed`);
             allPosts = await res.json();
-            
             userProfiles = {}; postLikes = {}; postViews = {};
             
             allPosts.forEach(p => {
                 if(p.text.includes("[FULL_PROF]")) {
                     const parts = p.text.split('[FULL_PROF] ')[1].split(' | ');
-                    userProfiles[parts[0]] = { name: parts[1], bio: parts[2], avatar: parts[3], dob: parts[4], city: parts[5], state: parts[6], country: parts[7] };
+                    userProfiles[parts[0]] = { name: parts[1], bio: parts[2], avatar: parts[3] };
                     if(parts[0] === localStorage.getItem('app_user')) document.getElementById('nav-avatar-img').src = parts[3] || `https://ui-avatars.com/api/?name=${parts[0]}`;
                 }
                 if(p.text.includes("[LIKE]")) {
-                    const tid = p.text.split('[LIKE] ')[1];
-                    postLikes[tid] = (postLikes[tid] || 0) + 1;
-                }
-                if(p.text.includes("[READ]")) {
-                    const parts = p.text.split('[READ] ')[1].split(' | ');
-                    if(!postViews[parts[0]]) postViews[parts[0]] = new Set();
-                    postViews[parts[0]].add(parts[1]);
+                    const parts = p.text.split('[LIKE] ')[1].split(' | ');
+                    if(!postLikes[parts[0]]) postLikes[parts[0]] = new Set();
+                    postLikes[parts[0]].add(parts[1]);
                 }
             });
 
             document.getElementById('dot').className = "status-dot online";
-            document.getElementById('status-text').innerText = "Shield Online";
-            
-            const visible = allPosts.filter(p => !p.text.includes("[FULL_PROF]") && !p.text.includes("[LIKE]") && !p.text.includes("[READ]"));
-            renderPosts(visible);
-            if(visible.length > 0) trackRead(visible[0].id);
-
-        } catch (err) {
-            document.getElementById('dot').className = "status-dot";
-            document.getElementById('status-text').innerText = "Shield Sleeping...";
-            setTimeout(loadFeed, 6000);
-        }
+            renderPosts(allPosts.filter(p => !p.text.includes("[FULL_PROF]") && !p.text.includes("[LIKE]")));
+        } catch (err) { setTimeout(loadFeed, 6000); }
     }
 
     function renderPosts(posts) {
         const curr = localStorage.getItem('app_user');
         document.getElementById('feed').innerHTML = posts.map(p => {
-            const time = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             const parts = p.text.split(']: '), head = parts[0] || "", content = parts[1] || p.text;
-            const user = head.split(' [IP:')[0] || p.user, ip = head.split(' [IP:')[1] || "";
+            const user = head.split(' [IP:')[0] || p.user;
+            const prof = userProfiles[user] || { name: user, avatar: `https://ui-avatars.com/api/?name=${user}` };
             
-            const prof = userProfiles[user] || { name: user, bio: "Member", avatar: `https://ui-avatars.com/api/?name=${user}` };
-            const loc = prof.city ? `📍 ${prof.city}, ${prof.country}` : "";
-            const likes = postLikes[p.id] || 0;
-            const views = postViews[p.id] ? postViews[p.id].size : 0;
+            const likesSet = postLikes[p.id] || new Set();
+            const hasLiked = likesSet.has(curr);
 
             return `
                 <div class="post">
                     <div class="post-header">
                         <div style="display:flex; align-items:center;">
-                            <img src="${prof.avatar}" class="avatar-img" onerror="this.src='https://ui-avatars.com/api/?name=${user}'">
-                            <div>
-                                <span class="post-user">${prof.name || user}</span>
-                                <div class="user-bio">${prof.bio} <br> ${loc}</div>
-                            </div>
-                        </div>
-                        <div style="text-align:right">
-                            <span class="time">${time}</span>
-                            ${curr === ADMIN_USER ? `<div style="font-size:9px; color:orange;">${ip}</div>` : ''}
-                            ${curr === ADMIN_USER ? `<button onclick="deletePost('${p.id}')" style="color:red; background:none; border:none; font-size:10px; cursor:pointer;">REDACT</button>` : ''}
+                            <img src="${prof.avatar}" class="avatar-img">
+                            <div><span class="post-user">${prof.name || user}</span></div>
                         </div>
                     </div>
-                    <p style="margin:12px 0; color:#262626; line-height:1.5; font-size:15px;">${content}</p>
+                    <p>${content}</p>
                     <div class="post-actions">
-                        <button class="like-btn" onclick="sendLike('${p.id}')">❤️ ${likes}</button>
-                        ${curr === ADMIN_USER ? `<div style="font-size:10px; color:#999;">👁️ ${views} views</div>` : ''}
+                        <button class="like-btn" onclick="sendLike('${p.id}')" 
+                            style="background:${hasLiked ? '#ff4d4d' : '#fff'}; color:${hasLiked ? '#fff' : '#ff4d4d'}">
+                            ❤️ ${likesSet.size}
+                        </button>
                     </div>
                 </div>
             `;
         }).join('');
     }
 
-    function filterFeed() {
-        const q = document.getElementById('searchBar').value.toLowerCase();
-        const visible = allPosts.filter(p => !p.text.includes("[FULL_PROF]") && !p.text.includes("[LIKE]") && !p.text.includes("[READ]"));
-        renderPosts(visible.filter(p => p.text.toLowerCase().includes(q)));
-    }
-
-    async function deletePost(id) {
-        if(confirm("Confirm Redaction?")) { await fetch(`${SHIELD_URL}/api/delete/${id}`, { method: 'DELETE' }); loadFeed(); }
-    }
-
     async function sharePost() {
         const t = document.getElementById('postText').value;
-        if(!t.trim()) return;
-        await fetch(`${SHIELD_URL}/api/share`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: localStorage.getItem('app_user'), message: t })
-        });
+        await fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: localStorage.getItem('app_user'), message: t }) });
         document.getElementById('postText').value = ""; loadFeed();
     }
-
-    function logout() { localStorage.clear(); location.reload(); }
 </script>
 </body>
 </html>
