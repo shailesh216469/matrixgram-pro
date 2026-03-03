@@ -5,32 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MatrixGram Elite</title>
     <style>
-        :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
+        :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; --border: #dbdbdb; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
-        .navbar { background: white; border-bottom: 1px solid #dbdbdb; width: 100%; padding: 15px 0; position: sticky; top: 0; text-align: center; font-weight: bold; color: var(--primary); z-index: 100; }
-        .top-right-nav { position: absolute; top: 10px; right: 15px; cursor: pointer; z-index: 101; }
-        .nav-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; background: #eee; }
-        #app-view, #login-view { width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; }
-        .card { background: white; border: 1px solid #dbdbdb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
-        .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .btn-follow { background: #efefef; color: black; padding: 4px 12px; border-radius: 4px; font-size: 12px; border: none; cursor: pointer; font-weight: 600; }
+        
+        .navbar { background: white; border-bottom: 1px solid var(--border); width: 100%; padding: 10px 0; position: sticky; top: 0; display: flex; justify-content: center; z-index: 100; }
+        .nav-content { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; }
+        .nav-logo { font-weight: bold; color: var(--primary); font-size: 1.2rem; cursor: pointer; }
+        .nav-avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; background: #eee; cursor: pointer; }
+
+        #app-view, #login-view { width: 100%; max-width: 500px; padding: 15px; box-sizing: border-box; }
+        .card { background: white; border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 5px; box-sizing: border-box; font-size: 14px; outline: none; }
+        .search-box { background: #efefef; border: none; padding: 8px 12px; margin-bottom: 15px; }
+
+        .btn { width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-follow { background: #efefef; color: black; padding: 5px 12px; border-radius: 4px; font-size: 12px; border: none; cursor: pointer; font-weight: 600; }
         .btn-following { background: var(--primary); color: white; }
+
         #profile-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .avatar-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #ddd; }
-        .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
-        .post-header { display: flex; justify-content: space-between; align-items: center; }
-        .post-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px solid #f5f5f5; }
-        .like-btn { border: 1px solid #ffccd5; border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
-        .loader { text-align: center; color: #888; padding: 40px; }
+        
+        .post { background: white; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 15px; padding: 15px; transition: transform 0.1s; }
+        .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid #eee; }
+        .post-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 8px; border-top: 1px solid #f0f0f0; }
+        
+        .like-btn { background: none; border: 1px solid #ffccd5; border-radius: 20px; padding: 4px 12px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .liked { background: #ff4d4d !important; color: white !important; border-color: #ff4d4d !important; }
     </style>
 </head>
 <body>
 
 <div class="navbar">
-    MatrixGram Stealth
-    <div class="top-right-nav" onclick="openProfilePage()">
-        <img id="nav-avatar-img" src="" class="nav-avatar">
+    <div class="nav-content">
+        <div class="nav-logo" onclick="loadFeed()">MatrixGram</div>
+        <img id="nav-avatar-img" src="" class="nav-avatar" onclick="openProfilePage()">
     </div>
 </div>
 
@@ -39,34 +48,37 @@
         <h2 id="auth-title">Login</h2>
         <input type="text" id="userInput" placeholder="Username">
         <input type="password" id="passInput" placeholder="Password">
-        <button class="btn" onclick="handleAuth()">Enter App</button>
-        <span onclick="toggleAuth()" style="text-align:center; display:block; cursor:pointer; font-size:13px; color:var(--accent); margin-top:12px;">Need account? Register</span>
+        <button class="btn" onclick="handleAuth()">Enter Stealth Room</button>
+        <span onclick="toggleAuth()" style="text-align:center; display:block; cursor:pointer; font-size:12px; color:var(--accent); margin-top:10px;">Need access? Register</span>
     </div>
 </div>
 
 <div id="app-view" style="display:none;">
+    <input type="text" id="globalSearch" class="search-box" placeholder="Search people or posts..." onkeyup="renderPosts()">
+    
     <div class="card">
-        <textarea id="postText" rows="2" placeholder="Share something..."></textarea>
+        <textarea id="postText" rows="2" placeholder="What's the status?"></textarea>
         <button class="btn" onclick="sharePost()">Post to Matrix</button>
     </div>
     <div id="feed"></div>
 </div>
 
 <div id="profile-page">
-    <button onclick="closeProfilePage()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">← Back</button>
-    <h2>Profile Settings</h2>
-    <div style="margin-bottom:20px; font-size:14px; color:#666;">
-        <span id="follower-count">0</span> Followers | <span id="following-count">0</span> Following
+    <button onclick="closeProfilePage()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold; margin-bottom:20px;">← Back to Feed</button>
+    <h2>Account Settings</h2>
+    <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px; display:flex; gap:20px; text-align:center;">
+        <div style="flex:1;"><strong id="follower-count">0</strong><br><small>Followers</small></div>
+        <div style="flex:1;"><strong id="following-count">0</strong><br><small>Following</small></div>
     </div>
-    <input type="text" id="edit-name" placeholder="Display Name">
-    <input type="text" id="edit-dp" placeholder="Avatar URL">
-    <textarea id="edit-bio" placeholder="Bio"></textarea>
-    <button class="btn" onclick="saveFullProfile()">Save Profile</button>
+    <div class="form-group"><input type="text" id="edit-name" placeholder="Display Name"></div>
+    <div class="form-group"><input type="text" id="edit-dp" placeholder="Avatar URL (Direct link)"></div>
+    <div class="form-group"><textarea id="edit-bio" placeholder="Short Bio"></textarea></div>
+    <button class="btn" onclick="saveFullProfile()" style="background:var(--primary);">Update Global Profile</button>
+    <button onclick="logout()" style="background:none; border:none; color:#ff4d4d; width:100%; cursor:pointer; margin-top:20px; font-size:12px;">Logout Session</button>
 </div>
 
 <script>
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
-    const ADMIN_USER = "shailesh2164"; 
     let allPosts = [], userProfiles = {}, postLikes = {}, userFollows = {};
 
     window.onload = () => { if(localStorage.getItem('app_user')) showApp(); };
@@ -84,7 +96,7 @@
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: u, password: p })
         });
-        if (res.ok) { localStorage.setItem('app_user', u); showApp(); } else alert("Error");
+        if (res.ok) { localStorage.setItem('app_user', u); showApp(); } else alert("Access Denied");
     }
 
     function showApp() {
@@ -127,7 +139,7 @@
             allPosts.forEach(p => {
                 if(p.text.includes("[FULL_PROF]")) {
                     const parts = p.text.split('[FULL_PROF] ')[1].split(' | ');
-                    userProfiles[parts[0]] = { name: parts[1], avatar: parts[3] };
+                    userProfiles[parts[0]] = { name: parts[1], avatar: parts[3], bio: parts[2] };
                 }
                 if(p.text.includes("[LIKE]")) {
                     const parts = p.text.split('[LIKE] ')[1].split(' | ');
@@ -154,12 +166,29 @@
             document.getElementById('nav-avatar-img').src = getAvatar(curr, myProf.avatar);
 
             renderPosts();
-        } catch (e) { console.log(e); }
+        } catch (e) { console.log("Matrix Sync Error"); }
     }
 
     function renderPosts() {
         const curr = localStorage.getItem('app_user');
-        const visible = allPosts.filter(p => !p.text.includes("[") || !p.text.includes("]"));
+        const query = document.getElementById('globalSearch').value.toLowerCase();
+        
+        const visible = allPosts.filter(p => {
+            const isSystem = p.text.includes("[FULL_PROF]") || p.text.includes("[LIKE]") || 
+                             p.text.includes("[UNLIKE]") || p.text.includes("[FOLLOW]") || 
+                             p.text.includes("[UNFOLLOW]");
+            if(isSystem) return false;
+
+            const parts = p.text.split(']: ');
+            const user = (parts[0] || "").split(' [IP')[0] || p.user;
+            const content = parts[1] || p.text;
+            const prof = userProfiles[user] || { name: user };
+
+            // Search Filter Logic
+            return content.toLowerCase().includes(query) || 
+                   user.toLowerCase().includes(query) || 
+                   (prof.name && prof.name.toLowerCase().includes(query));
+        });
         
         document.getElementById('feed').innerHTML = visible.map(p => {
             const parts = p.text.split(']: '), user = (parts[0] || "").split(' [IP')[0] || p.user;
@@ -177,18 +206,18 @@
                         <div style="display:flex; align-items:center;">
                             <img src="${getAvatar(user, prof.avatar)}" class="avatar-img">
                             <div>
-                                <div style="font-weight:bold;">${prof.name || user}</div>
+                                <div style="font-weight:bold; font-size:14px;">${prof.name || user}</div>
                             </div>
                         </div>
-                        ${user !== curr ? `<button onclick="toggleFollow('${user}')" class="btn-follow ${isFollowing ? 'btn-following' : ''}">
+                        ${user !== curr ? `
+                        <button onclick="toggleFollow('${user}')" class="btn-follow ${isFollowing ? 'btn-following' : ''}">
                             ${isFollowing ? 'Following' : 'Follow'}
                         </button>` : ''}
                     </div>
-                    <p>${content}</p>
+                    <div style="font-size:15px; color:#262626; margin:5px 0;">${content}</div>
                     <div class="post-actions">
-                        <button class="like-btn" onclick="toggleLike('${p.id}')" 
-                            style="background:${isLiked ? '#ff4d4d' : '#fff'}; color:${isLiked ? '#fff' : '#ff4d4d'}">
-                            ❤️ ${likes.size}
+                        <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${p.id}')">
+                            ${isLiked ? '❤️' : '🤍'} ${likes.size}
                         </button>
                     </div>
                 </div>
@@ -202,8 +231,8 @@
         document.getElementById('profile-page').style.display = 'block';
         document.getElementById('edit-name').value = p.name || "";
         document.getElementById('edit-dp').value = p.avatar || "";
+        document.getElementById('edit-bio').value = p.bio || "";
         
-        // Count followers (who follows ME)
         let followers = 0;
         Object.values(userFollows).forEach(set => { if(set.has(u)) followers++; });
         document.getElementById('follower-count').innerText = followers;
@@ -214,7 +243,7 @@
 
     async function saveFullProfile() {
         const u = localStorage.getItem('app_user');
-        const msg = `[FULL_PROF] ${u} | ${document.getElementById('edit-name').value} | bio | ${document.getElementById('edit-dp').value} | 0 | city | 0 | country`;
+        const msg = `[FULL_PROF] ${u} | ${document.getElementById('edit-name').value} | ${document.getElementById('edit-bio').value} | ${document.getElementById('edit-dp').value} | 0 | city | 0 | country`;
         await fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: "SYS_DATA", message: msg }) });
         closeProfilePage(); loadFeed();
     }
@@ -225,6 +254,8 @@
         await fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: localStorage.getItem('app_user'), message: t }) });
         document.getElementById('postText').value = ""; loadFeed();
     }
+
+    function logout() { localStorage.clear(); location.reload(); }
 </script>
 </body>
 </html>
