@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MatrixGram Stealth</title>
+    <title>MatrixGram Stealth Pro</title>
     <style>
         :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
@@ -12,11 +12,12 @@
         .card { background: white; border: 1px solid #dbdbdb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .stats-bar { text-align: center; margin-bottom: 15px; font-size: 13px; color: #888; background: #eee; padding: 5px; border-radius: 20px; }
         .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
         .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .post-user { font-weight: bold; color: var(--primary); }
-        .del-btn { color: #ff4d4d; background: none; border: none; font-size: 12px; cursor: pointer; font-weight: bold; }
-        .time { font-size: 10px; color: #999; }
+        .del-btn { color: #ff4d4d; background: none; border: none; font-size: 12px; cursor: pointer; }
+        .time { font-size: 10px; color: #999; margin-left: 5px; }
         .toggle-link { text-align: center; font-size: 14px; color: var(--accent); cursor: pointer; display: block; margin-top: 10px; }
     </style>
 </head>
@@ -29,8 +30,8 @@
         <h2 id="auth-title">Login</h2>
         <input type="text" id="userInput" placeholder="Username">
         <input type="password" id="passInput" placeholder="Password">
-        <button class="btn" id="authBtn" onclick="handleAuth()">Enter</button>
-        <span class="toggle-link" onclick="toggleAuth()">New here? Register</span>
+        <button class="btn" id="authBtn" onclick="handleAuth()">Enter App</button>
+        <span class="toggle-link" onclick="toggleAuth()">New here? Create account</span>
     </div>
 </div>
 
@@ -39,16 +40,17 @@
         <textarea id="postText" rows="2" placeholder="Share to the Matrix..."></textarea>
         <button class="btn" onclick="sharePost()">Post</button>
     </div>
-<div id="stats-bar" style="text-align: center; margin-bottom: 10px; font-size: 14px; color: #666;">
-    Total Posts: <span id="post-count" style="font-weight: bold; color: var(--primary);">0</span>
-</div>
 
+    <div class="stats-bar">
+        Database Volume: <span id="post-count" style="font-weight:bold; color:var(--primary);">0</span> posts
+    </div>
 
     <div id="feed"></div>
     <button onclick="logout()" style="background:none; border:none; color:#999; width:100%; cursor:pointer; margin-top:20px;">Logout</button>
 </div>
 
 <script>
+    // YOUR UNIQUE RENDER LINK
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
     let isLoginMode = true;
 
@@ -70,7 +72,7 @@
             body: JSON.stringify({ username, password })
         });
         if (res.ok) { localStorage.setItem('app_user', username); showApp(); }
-        else { alert("Auth Failed"); }
+        else { alert("Authentication failed."); }
     }
 
     function showApp() {
@@ -80,37 +82,38 @@
     }
 
     async function loadFeed() {
-    const res = await fetch(`${SHIELD_URL}/api/feed`);
-    const posts = await res.json();
-    const currentUser = localStorage.getItem('app_user');
-    
-    document.getElementById('feed').innerHTML = posts.map(p => {
-        const timeStr = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const res = await fetch(`${SHIELD_URL}/api/feed`);
+        const posts = await res.json();
+        const currentUser = localStorage.getItem('app_user');
         
-        // FIX: Split the text at the first colon to get the real username
-        // Example message: "Sahil: Hii" -> name is "Sahil", text is "Hii"
-        const parts = p.text.split(': ');
-        const realUser = parts.length > 1 ? parts[0] : p.user; 
-        const messageContent = parts.length > 1 ? parts.slice(1).join(': ') : p.text;
+        // UPDATE THE COUNTER
+        document.getElementById('post-count').innerText = posts.length;
 
-        return `
-            <div class="post">
-                <div class="post-header">
-                    <div>
-                        <span class="post-user">@${realUser}</span>
-                        <span class="time">${timeStr}</span>
+        document.getElementById('feed').innerHTML = posts.map(p => {
+            const timeStr = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            // LOGIC TO EXTRACT REAL NAME
+            const parts = p.text.split(': ');
+            const realUser = parts.length > 1 ? parts[0] : p.user; 
+            const messageContent = parts.length > 1 ? parts.slice(1).join(': ') : p.text;
+
+            return `
+                <div class="post">
+                    <div class="post-header">
+                        <div>
+                            <span class="post-user">@${realUser}</span>
+                            <span class="time">${timeStr}</span>
+                        </div>
+                        ${currentUser === 'shailesh2164' ? `<button class="del-btn" onclick="deletePost('${p.id}')">Delete</button>` : ''}
                     </div>
-                    ${currentUser === 'shailesh2164' ? `<button class="del-btn" onclick="deletePost('${p.id}')">Delete</button>` : ''}
+                    <p style="margin:0; color:#262626; line-height:1.4;">${messageContent}</p>
                 </div>
-                <p style="margin:0;">${messageContent}</p>
-            </div>
-        `;
-    }).join('');
-}
-
+            `;
+        }).join('');
+    }
 
     async function deletePost(eventId) {
-        if(!confirm("Delete this message?")) return;
+        if(!confirm("Permenantly remove this from the Matrix database?")) return;
         const res = await fetch(`${SHIELD_URL}/api/delete/${eventId}`, { method: 'DELETE' });
         if(res.ok) loadFeed();
     }
