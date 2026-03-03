@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MatrixGram Stealth Pro</title>
+    <title>MatrixGram Admin Pro</title>
     <style>
         :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
@@ -12,6 +12,7 @@
         .card { background: white; border: 1px solid #dbdbdb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .admin-panel { background: #333; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
         .stats-bar { text-align: center; margin-bottom: 15px; font-size: 13px; color: #888; background: #eee; padding: 5px; border-radius: 20px; }
         .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
         .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -19,11 +20,12 @@
         .del-btn { color: #ff4d4d; background: none; border: none; font-size: 12px; cursor: pointer; }
         .time { font-size: 10px; color: #999; margin-left: 5px; }
         .toggle-link { text-align: center; font-size: 14px; color: var(--accent); cursor: pointer; display: block; margin-top: 10px; }
+        #searchBar { border: 2px solid var(--primary); margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="navbar">MatrixGram Stealth</div>
+<div class="navbar">MatrixGram Stealth Control</div>
 
 <div id="login-view">
     <div class="card">
@@ -36,13 +38,19 @@
 </div>
 
 <div id="app-view" style="display:none;">
+    <div id="admin-controls" class="admin-panel">
+        <h3 style="margin-top:0;">Admin Control Panel</h3>
+        <input type="text" id="searchBar" placeholder="Search Matrix Database..." onkeyup="filterFeed()">
+        <button onclick="loadFeed()" style="width:100%; margin-top:5px; padding:5px; cursor:pointer;">Refresh All Data</button>
+    </div>
+
     <div class="card">
-        <textarea id="postText" rows="2" placeholder="Share to the Matrix..."></textarea>
+        <textarea id="postText" rows="2" placeholder="Announce to users..."></textarea>
         <button class="btn" onclick="sharePost()">Post</button>
     </div>
 
     <div class="stats-bar">
-        Database Volume: <span id="post-count" style="font-weight:bold; color:var(--primary);">0</span> posts
+        System Load: <span id="post-count">0</span> records
     </div>
 
     <div id="feed"></div>
@@ -50,9 +58,12 @@
 </div>
 
 <script>
-    // YOUR UNIQUE RENDER LINK
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
+    let allPosts = []; // Global store for searching
     let isLoginMode = true;
+
+    // Define your Admin Username here
+    const ADMIN_USER = "shailesh2164"; 
 
     window.onload = () => { if(localStorage.getItem('app_user')) showApp(); };
 
@@ -63,36 +74,42 @@
     }
 
     async function handleAuth() {
-        const username = document.getElementById('userInput').value;
-        const password = document.getElementById('passInput').value;
+        const u = document.getElementById('userInput').value;
+        const p = document.getElementById('passInput').value;
         const path = isLoginMode ? '/api/login' : '/api/register';
         const res = await fetch(`${SHIELD_URL}${path}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username: u, password: p })
         });
-        if (res.ok) { localStorage.setItem('app_user', username); showApp(); }
-        else { alert("Authentication failed."); }
+        if (res.ok) { localStorage.setItem('app_user', u); showApp(); }
+        else { alert("Auth Failed"); }
     }
 
     function showApp() {
+        const currentUser = localStorage.getItem('app_user');
         document.getElementById('login-view').style.display = 'none';
         document.getElementById('app-view').style.display = 'block';
+        
+        // Show Admin Panel only for you
+        if(currentUser === ADMIN_USER) {
+            document.getElementById('admin-controls').style.display = 'block';
+        }
         loadFeed();
     }
 
     async function loadFeed() {
         const res = await fetch(`${SHIELD_URL}/api/feed`);
-        const posts = await res.json();
-        const currentUser = localStorage.getItem('app_user');
-        
-        // UPDATE THE COUNTER
-        document.getElementById('post-count').innerText = posts.length;
+        allPosts = await res.json();
+        renderPosts(allPosts);
+    }
 
-        document.getElementById('feed').innerHTML = posts.map(p => {
+    function renderPosts(postsToDisplay) {
+        const currentUser = localStorage.getItem('app_user');
+        document.getElementById('post-count').innerText = postsToDisplay.length;
+
+        document.getElementById('feed').innerHTML = postsToDisplay.map(p => {
             const timeStr = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            
-            // LOGIC TO EXTRACT REAL NAME
             const parts = p.text.split(': ');
             const realUser = parts.length > 1 ? parts[0] : p.user; 
             const messageContent = parts.length > 1 ? parts.slice(1).join(': ') : p.text;
@@ -104,17 +121,24 @@
                             <span class="post-user">@${realUser}</span>
                             <span class="time">${timeStr}</span>
                         </div>
-                        ${currentUser === 'shailesh2164' ? `<button class="del-btn" onclick="deletePost('${p.id}')">Delete</button>` : ''}
+                        ${currentUser === ADMIN_USER ? `<button class="del-btn" onclick="deletePost('${p.id}')">REDACT</button>` : ''}
                     </div>
-                    <p style="margin:0; color:#262626; line-height:1.4;">${messageContent}</p>
+                    <p style="margin:0;">${messageContent}</p>
                 </div>
             `;
         }).join('');
     }
 
-    async function deletePost(eventId) {
-        if(!confirm("Permenantly remove this from the Matrix database?")) return;
-        const res = await fetch(`${SHIELD_URL}/api/delete/${eventId}`, { method: 'DELETE' });
+    // SEARCH DATABASE FUNCTION
+    function filterFeed() {
+        const query = document.getElementById('searchBar').value.toLowerCase();
+        const filtered = allPosts.filter(p => p.text.toLowerCase().includes(query));
+        renderPosts(filtered);
+    }
+
+    async function deletePost(id) {
+        if(!confirm("ADMIN ACTION: Redact this record from Matrix?")) return;
+        const res = await fetch(`${SHIELD_URL}/api/delete/${id}`, { method: 'DELETE' });
         if(res.ok) loadFeed();
     }
 
