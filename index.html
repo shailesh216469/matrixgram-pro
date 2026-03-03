@@ -13,16 +13,13 @@
         input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
         
-        /* AVATAR & BIO */
         .avatar-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #ddd; }
         .user-bio { font-size: 11px; color: #777; margin-top: 2px; }
 
-        /* LIKES */
-        .post-actions { display: flex; align-items: center; margin-top: 12px; padding-top: 8px; border-top: 1px solid #f5f5f5; }
-        .like-btn { background: #fff0f0; border: 1px solid #ffccd5; border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 14px; color: #ff4d4d; font-weight: bold; display: flex; align-items: center; }
-        .like-btn:hover { background: #ffe0e5; }
+        .post-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px solid #f5f5f5; }
+        .like-btn { background: #fff0f0; border: 1px solid #ffccd5; border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 13px; color: #ff4d4d; font-weight: bold; }
+        .view-tag { font-size: 10px; color: #999; display: flex; align-items: center; }
         
-        /* ADMIN PANEL */
         .admin-panel { background: #1a1a1a; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #555; margin-right: 5px; }
         .online { background: #0dbd8b; box-shadow: 0 0 8px #0dbd8b; }
@@ -48,7 +45,9 @@
 
 <div id="app-view" style="display:none;">
     <div id="admin-controls" class="admin-panel">
-        <div style="font-size:12px; margin-bottom:8px;"><span id="dot" class="status-dot"></span> Shield Status</div>
+        <div style="font-size:12px; margin-bottom:8px;">
+            <span id="dot" class="status-dot"></span> 
+            <span id="status-text">Shield Status</span> </div>
         <input type="text" id="searchBar" placeholder="Search Database..." onkeyup="filterFeed()" style="background:#333; color:white; border:none; padding:8px;">
     </div>
 
@@ -75,7 +74,7 @@
 <script>
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
     const ADMIN_USER = "shailesh2164"; 
-    let allPosts = [], userProfiles = {}, postLikes = {}, isLoginMode = true;
+    let allPosts = [], userProfiles = {}, postLikes = {}, postViews = {}, isLoginMode = true;
 
     window.onload = () => { if(localStorage.getItem('app_user')) showApp(); };
 
@@ -127,15 +126,31 @@
         loadFeed();
     }
 
+    // NEW FEATURE: Sends a read receipt for specific posts
+    async function trackRead(id) {
+        const user = localStorage.getItem('app_user');
+        // Prevent admin from inflating their own view counts
+        if(user === ADMIN_USER) return; 
+        
+        await fetch(`${SHIELD_URL}/api/share`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: "SYS_READ", message: `[READ] ${id} | ${user}` })
+        });
+    }
+
     async function loadFeed() {
         const feedEl = document.getElementById('feed');
+        const statusText = document.getElementById('status-text');
+        const dot = document.getElementById('dot');
+
         feedEl.innerHTML = '<div class="loader">Accessing Matrix Data...</div>';
         try {
             const res = await fetch(`${SHIELD_URL}/api/feed`);
             allPosts = await res.json();
             
-            // Process System Data
-            userProfiles = {}; postLikes = {};
+            userProfiles = {}; postLikes = {}; postViews = {};
+            
             allPosts.forEach(p => {
                 if(p.text.includes("[PROF]")) {
                     const parts = p.text.split('[PROF] ')[1].split(' | ');
@@ -145,12 +160,26 @@
                     const tid = p.text.split('[LIKE] ')[1];
                     postLikes[tid] = (postLikes[tid] || 0) + 1;
                 }
+                if(p.text.includes("[READ]")) {
+                    const parts = p.text.split('[READ] ')[1].split(' | ');
+                    const tid = parts[0];
+                    if(!postViews[tid]) postViews[tid] = new Set();
+                    postViews[tid].add(parts[1]); // Set ensures unique views
+                }
             });
 
-            document.getElementById('dot').className = "status-dot online";
-            renderPosts(allPosts.filter(p => !p.text.includes("[PROF]") && !p.text.includes("[LIKE]")));
+            if(dot) dot.className = "status-dot online";
+            if(statusText) statusText.innerText = "Shield Online";
+            
+            const visiblePosts = allPosts.filter(p => !p.text.includes("[PROF]") && !p.text.includes("[LIKE]") && !p.text.includes("[READ]"));
+            renderPosts(visiblePosts);
+
+            // Track reading first post as a sample
+            if(visiblePosts.length > 0) trackRead(visiblePosts[0].id);
+
         } catch (err) {
-            document.getElementById('dot').className = "status-dot";
+            if(dot) dot.className = "status-dot";
+            if(statusText) statusText.innerText = "Shield Sleeping...";
             setTimeout(loadFeed, 5000);
         }
     }
@@ -163,6 +192,7 @@
             const user = head.split(' [IP:')[0] || p.user, ip = head.split(' [IP:')[1] || "";
             const prof = userProfiles[user] || { bio: "Member", avatar: `https://ui-avatars.com/api/?name=${user}` };
             const likes = postLikes[p.id] || 0;
+            const views = postViews[p.id] ? postViews[p.id].size : 0;
 
             return `
                 <div class="post">
@@ -183,6 +213,7 @@
                     <p style="margin:10px 0; color:#262626; line-height:1.5;">${content}</p>
                     <div class="post-actions">
                         <button class="like-btn" onclick="sendLike('${p.id}')">❤️ ${likes}</button>
+                        ${curr === ADMIN_USER ? `<div class="view-tag">👁️ ${views} views</div>` : ''}
                     </div>
                 </div>
             `;
@@ -191,7 +222,8 @@
 
     function filterFeed() {
         const q = document.getElementById('searchBar').value.toLowerCase();
-        renderPosts(allPosts.filter(p => !p.text.includes("[PROF]") && !p.text.includes("[LIKE]") && p.text.toLowerCase().includes(q)));
+        const visible = allPosts.filter(p => !p.text.includes("[PROF]") && !p.text.includes("[LIKE]") && !p.text.includes("[READ]"));
+        renderPosts(visible.filter(p => p.text.toLowerCase().includes(q)));
     }
 
     async function deletePost(id) {
