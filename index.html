@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MatrixGram Stealth</title>
+    <style>
+        :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
+        .navbar { background: white; border-bottom: 1px solid #dbdbdb; width: 100%; padding: 15px 0; position: sticky; top: 0; text-align: center; font-weight: bold; color: var(--primary); z-index: 100; }
+        
+        #app-view, #login-view { width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; }
+        .card { background: white; border: 1px solid #dbdbdb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
+        .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        
+        .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; text-align: left; }
+        .post-user { font-weight: bold; color: var(--primary); margin-bottom: 5px; display: block; }
+        #status { font-size: 12px; color: #999; margin: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">MatrixGram Stealth</div>
+<div id="status">Connecting to Shield...</div>
+
+<div id="login-view">
+    <div class="card">
+        <h2>Welcome</h2>
+        <input type="text" id="usernameInput" placeholder="Enter a Username">
+        <button class="btn" onclick="startApp()">Enter App</button>
+    </div>
+</div>
+
+<div id="app-view" style="display:none;">
+    <div class="card">
+        <textarea id="postText" rows="2" placeholder="Share something..."></textarea>
+        <button class="btn" id="sendBtn" onclick="sharePost()">Post to Feed</button>
+    </div>
+    <div id="feed"></div>
+    <button onclick="logout()" style="background:none; border:none; color:#999; width:100%; margin-top:20px; cursor:pointer;">Logout</button>
+</div>
+
+<script>
+    // 1. YOUR ADMIN SHIELD URL (Get this after deploying to Render)
+    const SHIELD_URL = "https://your-app-name.onrender.com"; 
+
+    // Check if user is already "logged in" locally
+    window.onload = () => {
+        const savedUser = localStorage.getItem('app_user');
+        if (savedUser) showApp();
+    };
+
+    function startApp() {
+        const user = document.getElementById('usernameInput').value.trim();
+        if (!user) return alert("Please enter a username");
+        localStorage.setItem('app_user', user);
+        showApp();
+    }
+
+    function showApp() {
+        document.getElementById('login-view').style.display = 'none';
+        document.getElementById('app-view').style.display = 'block';
+        loadFeed();
+        // Refresh feed every 30 seconds
+        setInterval(loadFeed, 30000);
+    }
+
+    // 2. THE STEALTH FEED FETCH
+    async function loadFeed() {
+        const status = document.getElementById('status');
+        try {
+            const res = await fetch(`${SHIELD_URL}/api/feed`);
+            const posts = await res.json();
+            
+            const feedDiv = document.getElementById('feed');
+            feedDiv.innerHTML = posts.map(p => `
+                <div class="post">
+                    <span class="post-user">@${p.user}</span>
+                    <div>${p.text}</div>
+                </div>
+            `).join('');
+            status.innerText = "Feed Updated";
+        } catch (e) {
+            status.innerText = "Shield Offline. Check Render logs.";
+        }
+    }
+
+    // 3. THE STEALTH SHARE
+    async function sharePost() {
+        const text = document.getElementById('postText').value;
+        const user = localStorage.getItem('app_user');
+        const btn = document.getElementById('sendBtn');
+
+        if (!text.trim()) return;
+        
+        btn.disabled = true;
+        btn.innerText = "Posting...";
+
+        try {
+            const res = await fetch(`${SHIELD_URL}/api/share`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user, message: text })
+            });
+
+            if (res.ok) {
+                document.getElementById('postText').value = "";
+                loadFeed();
+            }
+        } catch (e) {
+            alert("Shield Error: Could not post.");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Post to Feed";
+        }
+    }
+
+    function logout() { localStorage.clear(); location.reload(); }
+</script>
+</body>
+</html>
