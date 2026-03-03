@@ -29,13 +29,15 @@
 
         #profile-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         
-        .post { background: white; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 15px; padding: 15px; }
+        .post { background: white; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 15px; padding: 15px; position: relative; }
         .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid #eee; }
         .post-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 8px; border-top: 1px solid #f0f0f0; }
         
         .like-btn { background: none; border: 1px solid #ffccd5; border-radius: 20px; padding: 4px 12px; cursor: pointer; font-size: 13px; font-weight: bold; color: #ff4d4d; }
         .liked { background: #ff4d4d !important; color: white !important; }
+        .del-btn { color: #ccc; border: none; background: none; font-size: 18px; cursor: pointer; padding: 0 5px; }
+        .del-btn:hover { color: #ff4d4d; }
     </style>
 </head>
 <body>
@@ -64,12 +66,12 @@
 
 <div id="profile-page">
     <button onclick="closeProfilePage()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold; margin-bottom:20px;">← Back</button>
-    <h2>Profile</h2>
+    <h2>Profile Settings</h2>
     <input type="text" id="edit-name" placeholder="Display Name">
     <input type="text" id="edit-dp" placeholder="Avatar URL">
     <textarea id="edit-bio" placeholder="Bio"></textarea>
     <button class="btn" onclick="saveFullProfile()">Update Profile</button>
-    <button onclick="logout()" style="margin-top:20px; color:red; background:none; border:none; width:100%; cursor:pointer;">Logout</button>
+    <button onclick="logout()" style="margin-top:20px; color:red; background:none; border:none; width:100%; cursor:pointer;">Logout Session</button>
 </div>
 
 <script>
@@ -103,6 +105,12 @@
             body: JSON.stringify({ username: "SYS_ACTION", message: `${type} ${target} | ${u}` })
         });
         loadFeed();
+    }
+
+    async function deletePost(id) {
+        if(!confirm("Delete this post permanently?")) return;
+        const res = await fetch(`${SHIELD_URL}/api/delete/${id}`, { method: 'DELETE' });
+        if(res.ok) loadFeed();
     }
 
     async function loadFeed() {
@@ -141,7 +149,7 @@
         const curr = localStorage.getItem('app_user');
         const q = document.getElementById('globalSearch').value.toLowerCase();
         
-        // AGGRESSIVE FILTER: Only show messages that ARE NOT system actions
+        // AGGRESSIVE FILTER: Wipes out system chatter (SYS_READ, etc)
         const filtered = allPosts.filter(p => {
             const isSystem = p.text.startsWith("[") || ["SYS_ACTION", "SYS_DATA", "SYS_READ", "SYS_LIKE"].includes(p.user);
             if(isSystem) return false;
@@ -151,10 +159,7 @@
             const content = (parts[1] || p.text).toLowerCase();
             const isFollowing = userFollows[curr]?.has(user);
 
-            // Apply Following-Only Filter
             if(feedMode === 'following' && !isFollowing && user !== curr) return false;
-
-            // Apply Search Filter
             return content.includes(q) || user.toLowerCase().includes(q);
         });
 
@@ -170,11 +175,13 @@
                     <div class="post-header">
                         <div style="display:flex; align-items:center;">
                             <img src="${prof.avatar || 'https://ui-avatars.com/api/?name='+user}" class="avatar-img">
-                            <div style="font-weight:bold;">${prof.name || user}</div>
+                            <div style="font-weight:bold; font-size:14px;">${prof.name || user}</div>
                         </div>
-                        ${user !== curr ? `<button onclick="toggleFollow('${user}')" class="btn-follow ${isFollowing ? 'btn-following' : ''}">${isFollowing ? 'Following' : 'Follow'}</button>` : ''}
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            ${user !== curr ? `<button onclick="toggleFollow('${user}')" class="btn-follow ${isFollowing ? 'btn-following' : ''}">${isFollowing ? 'Following' : 'Follow'}</button>` : `<button class="del-btn" onclick="deletePost('${p.id}')">×</button>`}
+                        </div>
                     </div>
-                    <div>${content}</div>
+                    <div style="margin:8px 0; color:#262626;">${content}</div>
                     <div class="post-actions">
                         <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${p.id}')">❤️ ${likes.size}</button>
                     </div>
