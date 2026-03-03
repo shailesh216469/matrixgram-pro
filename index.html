@@ -3,39 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MatrixGram Stealth</title>
+    <title>MatrixGram Elite</title>
     <style>
         :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
-        
-        /* Navigation */
         .navbar { background: white; border-bottom: 1px solid #dbdbdb; width: 100%; padding: 15px 0; position: sticky; top: 0; text-align: center; font-weight: bold; color: var(--primary); z-index: 100; }
         .top-right-nav { position: absolute; top: 10px; right: 15px; cursor: pointer; z-index: 101; }
-        .nav-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; background: #eee; display: block; }
-
-        /* General Layout */
+        .nav-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; background: #eee; }
         #app-view, #login-view { width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; }
         .card { background: white; border: 1px solid #dbdbdb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        
-        /* Profile Page Overlay */
+        .btn-follow { background: #efefef; color: black; padding: 4px 12px; border-radius: 4px; font-size: 12px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-following { background: var(--primary); color: white; }
         #profile-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 4px; }
-
-        /* Post Styling */
-        .avatar-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #ddd; background: #f0f0f0; }
+        .avatar-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #ddd; }
         .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
-        .post-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .post-header { display: flex; justify-content: space-between; align-items: center; }
         .post-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px solid #f5f5f5; }
-        .like-btn { border: 1px solid #ffccd5; border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 13px; font-weight: bold; }
-        
-        /* Admin Panel */
-        .admin-panel { background: #1a1a1a; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #555; margin-right: 5px; }
-        .online { background: #0dbd8b; box-shadow: 0 0 8px #0dbd8b; }
-        .sync-btn { background: #333; color: #0dbd8b; border: 1px solid #444; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; float: right; }
+        .like-btn { border: 1px solid #ffccd5; border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .loader { text-align: center; color: #888; padding: 40px; }
     </style>
 </head>
 <body>
@@ -53,202 +40,183 @@
         <input type="text" id="userInput" placeholder="Username">
         <input type="password" id="passInput" placeholder="Password">
         <button class="btn" onclick="handleAuth()">Enter App</button>
-        <span onclick="toggleAuth()" style="text-align:center; display:block; cursor:pointer; font-size:13px; color:var(--accent); margin-top:12px;">Need an account? Register</span>
+        <span onclick="toggleAuth()" style="text-align:center; display:block; cursor:pointer; font-size:13px; color:var(--accent); margin-top:12px;">Need account? Register</span>
     </div>
 </div>
 
 <div id="app-view" style="display:none;">
-    <div id="admin-controls" class="admin-panel">
-        <button class="sync-btn" onclick="loadFeed()">FORCE SYNC</button>
-        <div style="font-size:12px; margin-bottom:8px;"><span id="dot" class="status-dot online"></span> <span id="status-text">Shield Online</span></div>
-        <input type="text" id="searchBar" placeholder="Search Logs..." onkeyup="filterFeed()" style="background:#222; color:white; border:none; padding:8px;">
-    </div>
-
     <div class="card">
-        <textarea id="postText" rows="2" placeholder="What's on your mind?"></textarea>
+        <textarea id="postText" rows="2" placeholder="Share something..."></textarea>
         <button class="btn" onclick="sharePost()">Post to Matrix</button>
     </div>
-
     <div id="feed"></div>
-    <button onclick="logout()" style="background:none; border:none; color:#999; width:100%; cursor:pointer; margin-top:20px;">Logout</button>
 </div>
 
 <div id="profile-page">
-    <button onclick="closeProfilePage()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold; margin-bottom:20px;">← Back to Feed</button>
-    <h2>Account Settings</h2>
-    <div class="form-group"><label>Display Name</label><input type="text" id="edit-name"></div>
-    <div class="form-group"><label>Username</label><input type="text" id="edit-username" readonly style="background:#f0f0f0;"></div>
-    <div class="form-group"><label>Avatar URL</label><input type="text" id="edit-dp" placeholder="Link to image (Imgur/Pinterest)"></div>
-    <div class="form-group"><label>Bio</label><textarea id="edit-bio"></textarea></div>
-    <div class="form-group"><label>DOB</label><input type="date" id="edit-dob"></div>
-    <div class="form-group" style="display:flex; gap:10px;">
-        <div style="flex:1;"><label>City</label><input type="text" id="edit-city"></div>
-        <div style="flex:1;"><label>Country</label><input type="text" id="edit-country"></div>
+    <button onclick="closeProfilePage()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">← Back</button>
+    <h2>Profile Settings</h2>
+    <div style="margin-bottom:20px; font-size:14px; color:#666;">
+        <span id="follower-count">0</span> Followers | <span id="following-count">0</span> Following
     </div>
-    <button class="btn" onclick="saveFullProfile()" style="background:var(--primary);">Update Global Profile</button>
+    <input type="text" id="edit-name" placeholder="Display Name">
+    <input type="text" id="edit-dp" placeholder="Avatar URL">
+    <textarea id="edit-bio" placeholder="Bio"></textarea>
+    <button class="btn" onclick="saveFullProfile()">Save Profile</button>
 </div>
 
 <script>
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
     const ADMIN_USER = "shailesh2164"; 
-    let allPosts = [], userProfiles = {}, postLikes = {}, postViews = {};
+    let allPosts = [], userProfiles = {}, postLikes = {}, userFollows = {};
 
-    window.onload = () => { 
-        const u = localStorage.getItem('app_user');
-        if(u) {
-            updateNavAvatar(u, null);
-            showApp();
-        }
-    };
+    window.onload = () => { if(localStorage.getItem('app_user')) showApp(); };
 
-    // Fix for broken images
-    function updateNavAvatar(user, url) {
-        const img = document.getElementById('nav-avatar-img');
-        const fallback = `https://ui-avatars.com/api/?name=${user}&background=random&color=fff`;
-        img.src = (url && url.trim().length > 5) ? url : fallback;
-        img.onerror = () => { img.src = fallback; };
-    }
+    function toggleAuth() { document.getElementById('auth-title').innerText = "Register"; }
 
-    function toggleAuth() {
-        const t = document.getElementById('auth-title');
-        t.innerText = t.innerText === "Login" ? "Register" : "Login";
+    function getAvatar(user, url) {
+        if (url && url.length > 10) return url;
+        return `https://ui-avatars.com/api/?name=${user}&background=random&color=fff`;
     }
 
     async function handleAuth() {
         const u = document.getElementById('userInput').value, p = document.getElementById('passInput').value;
-        const isLogin = document.getElementById('auth-title').innerText === "Login";
-        const res = await fetch(`${SHIELD_URL}/api/${isLogin ? 'login' : 'register'}`, {
+        const res = await fetch(`${SHIELD_URL}/api/login`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: u, password: p })
         });
-        if (res.ok) { localStorage.setItem('app_user', u); updateNavAvatar(u, null); showApp(); } 
-        else alert("Auth Failed");
+        if (res.ok) { localStorage.setItem('app_user', u); showApp(); } else alert("Error");
     }
 
     function showApp() {
         document.getElementById('login-view').style.display = 'none';
         document.getElementById('app-view').style.display = 'block';
-        if(localStorage.getItem('app_user') === ADMIN_USER) document.getElementById('admin-controls').style.display = 'block';
         loadFeed();
     }
 
-    function openProfilePage() {
-        document.getElementById('profile-page').style.display = 'block';
-        const u = localStorage.getItem('app_user'), p = userProfiles[u] || {};
-        document.getElementById('edit-username').value = u;
-        document.getElementById('edit-name').value = p.name || "";
-        document.getElementById('edit-dp').value = p.avatar || "";
-        document.getElementById('edit-bio').value = p.bio || "";
-        document.getElementById('edit-city').value = p.city || "";
-        document.getElementById('edit-country').value = p.country || "";
-    }
-
-    function closeProfilePage() { document.getElementById('profile-page').style.display = 'none'; }
-
-    async function saveFullProfile() {
+    async function toggleLike(id) {
         const u = localStorage.getItem('app_user');
-        const dp = document.getElementById('edit-dp').value;
-        const msg = `[FULL_PROF] ${u} | ${document.getElementById('edit-name').value} | ${document.getElementById('edit-bio').value} | ${dp} | ${document.getElementById('edit-dob').value} | ${document.getElementById('edit-city').value} | 0 | ${document.getElementById('edit-country').value}`;
-        await fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: "SYS_DATA", message: msg }) });
-        updateNavAvatar(u, dp);
-        alert("Matrix Sync Complete!");
-        closeProfilePage(); loadFeed();
-    }
-
-    async function sendLike(id) {
-        const u = localStorage.getItem('app_user');
-        if (postLikes[id]?.has(u)) return;
-        await fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: "SYS_LIKE", message: `[LIKE] ${id} | ${u}` }) });
+        const hasLiked = postLikes[id]?.has(u);
+        const type = hasLiked ? "[UNLIKE]" : "[LIKE]";
+        
+        await fetch(`${SHIELD_URL}/api/share`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: "SYS_ACTION", message: `${type} ${id} | ${u}` })
+        });
         loadFeed();
     }
 
-    async function trackRead(id) {
+    async function toggleFollow(targetUser) {
         const u = localStorage.getItem('app_user');
-        if(u === ADMIN_USER || !id) return;
-        fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: "SYS_READ", message: `[READ] ${id} | ${u}` }) });
+        if(u === targetUser) return;
+        const isFollowing = userFollows[u]?.has(targetUser);
+        const type = isFollowing ? "[UNFOLLOW]" : "[FOLLOW]";
+
+        await fetch(`${SHIELD_URL}/api/share`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: "SYS_ACTION", message: `${type} ${targetUser} | ${u}` })
+        });
+        loadFeed();
     }
 
     async function loadFeed() {
         try {
             const res = await fetch(`${SHIELD_URL}/api/feed`);
             allPosts = await res.json();
-            userProfiles = {}; postLikes = {}; postViews = {};
-            
+            userProfiles = {}; postLikes = {}; userFollows = {};
+
             allPosts.forEach(p => {
                 if(p.text.includes("[FULL_PROF]")) {
                     const parts = p.text.split('[FULL_PROF] ')[1].split(' | ');
-                    userProfiles[parts[0]] = { name: parts[1], bio: parts[2], avatar: parts[3], city: parts[5], country: parts[7] };
-                    if(parts[0] === localStorage.getItem('app_user')) updateNavAvatar(parts[0], parts[3]);
+                    userProfiles[parts[0]] = { name: parts[1], avatar: parts[3] };
                 }
                 if(p.text.includes("[LIKE]")) {
                     const parts = p.text.split('[LIKE] ')[1].split(' | ');
                     if(!postLikes[parts[0]]) postLikes[parts[0]] = new Set();
-                    if(parts[1]) postLikes[parts[0]].add(parts[1]);
+                    postLikes[parts[0]].add(parts[1]);
                 }
-                if(p.text.includes("[READ]")) {
-                    const parts = p.text.split('[READ] ')[1].split(' | ');
-                    if(!postViews[parts[0]]) postViews[parts[0]] = new Set();
-                    if(parts[1]) postViews[parts[0]].add(parts[1]);
+                if(p.text.includes("[UNLIKE]")) {
+                    const parts = p.text.split('[UNLIKE] ')[1].split(' | ');
+                    if(postLikes[parts[0]]) postLikes[parts[0]].delete(parts[1]);
+                }
+                if(p.text.includes("[FOLLOW]")) {
+                    const parts = p.text.split('[FOLLOW] ')[1].split(' | ');
+                    if(!userFollows[parts[1]]) userFollows[parts[1]] = new Set();
+                    userFollows[parts[1]].add(parts[0]);
+                }
+                if(p.text.includes("[UNFOLLOW]")) {
+                    const parts = p.text.split('[UNFOLLOW] ')[1].split(' | ');
+                    if(userFollows[parts[1]]) userFollows[parts[1]].delete(parts[0]);
                 }
             });
 
-            // STRICT FILTER: Remove system markers and SYS usernames from feed
-            const visible = allPosts.filter(p => 
-                !p.text.includes("[FULL_PROF]") && 
-                !p.text.includes("[LIKE]") && 
-                !p.text.includes("[READ]") &&
-                !["SYS_DATA", "SYS_LIKE", "SYS_READ"].includes(p.user)
-            );
-            
-            renderPosts(visible);
-            if(visible.length > 0) trackRead(visible[0].id);
-        } catch (e) { console.error("Sync Error", e); }
+            const curr = localStorage.getItem('app_user');
+            const myProf = userProfiles[curr] || {};
+            document.getElementById('nav-avatar-img').src = getAvatar(curr, myProf.avatar);
+
+            renderPosts();
+        } catch (e) { console.log(e); }
     }
 
-    function renderPosts(posts) {
+    function renderPosts() {
         const curr = localStorage.getItem('app_user');
-        document.getElementById('feed').innerHTML = posts.map(p => {
-            const time = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const parts = p.text.split(']: '), head = parts[0] || "", content = parts[1] || p.text;
-            const user = head.split(' [IP:')[0] || p.user, ip = head.split(' [IP:')[1] || "";
-            const prof = userProfiles[user] || { name: user, avatar: "" };
+        const visible = allPosts.filter(p => !p.text.includes("[") || !p.text.includes("]"));
+        
+        document.getElementById('feed').innerHTML = visible.map(p => {
+            const parts = p.text.split(']: '), user = (parts[0] || "").split(' [IP')[0] || p.user;
+            if(["SYS_ACTION", "SYS_DATA"].includes(user)) return '';
             
-            const likesSet = postLikes[p.id] || new Set();
-            const hasLiked = likesSet.has(curr);
-            const avatar = (prof.avatar && prof.avatar.length > 5) ? prof.avatar : `https://ui-avatars.com/api/?name=${user}&background=random&color=fff`;
+            const content = parts[1] || p.text;
+            const prof = userProfiles[user] || {};
+            const likes = postLikes[p.id] || new Set();
+            const isLiked = likes.has(curr);
+            const isFollowing = userFollows[curr]?.has(user);
 
             return `
                 <div class="post">
                     <div class="post-header">
                         <div style="display:flex; align-items:center;">
-                            <img src="${avatar}" class="avatar-img" onerror="this.src='https://ui-avatars.com/api/?name=${user}'">
+                            <img src="${getAvatar(user, prof.avatar)}" class="avatar-img">
                             <div>
-                                <span class="post-user">${prof.name || user}</span>
-                                <div style="font-size:10px; color:#999;">${prof.city ? '📍 '+prof.city : 'Member'}</div>
+                                <div style="font-weight:bold;">${prof.name || user}</div>
                             </div>
                         </div>
-                        <div style="text-align:right">
-                            <span style="font-size:10px; color:#999;">${time}</span>
-                            ${curr === ADMIN_USER ? `<div style="font-size:8px; color:orange;">${ip}</div>` : ''}
-                        </div>
+                        ${user !== curr ? `<button onclick="toggleFollow('${user}')" class="btn-follow ${isFollowing ? 'btn-following' : ''}">
+                            ${isFollowing ? 'Following' : 'Follow'}
+                        </button>` : ''}
                     </div>
-                    <p style="margin:12px 0; line-height:1.4;">${content}</p>
+                    <p>${content}</p>
                     <div class="post-actions">
-                        <button class="like-btn" onclick="sendLike('${p.id}')" 
-                            style="background:${hasLiked ? '#ff4d4d' : '#fff'}; color:${hasLiked ? '#fff' : '#ff4d4d'}">
-                            ❤️ ${likesSet.size}
+                        <button class="like-btn" onclick="toggleLike('${p.id}')" 
+                            style="background:${isLiked ? '#ff4d4d' : '#fff'}; color:${isLiked ? '#fff' : '#ff4d4d'}">
+                            ❤️ ${likes.size}
                         </button>
-                        ${curr === ADMIN_USER ? `<span style="font-size:10px; color:#999;">👁️ ${(postViews[p.id]?.size || 0)} views</span>` : ''}
                     </div>
                 </div>
             `;
         }).join('');
     }
 
-    function filterFeed() {
-        const q = document.getElementById('searchBar').value.toLowerCase();
-        const visible = allPosts.filter(p => !p.text.includes("[FULL_PROF]") && !p.text.includes("[LIKE]") && !p.text.includes("[READ]"));
-        renderPosts(visible.filter(p => p.text.toLowerCase().includes(q)));
+    function openProfilePage() {
+        const u = localStorage.getItem('app_user');
+        const p = userProfiles[u] || {};
+        document.getElementById('profile-page').style.display = 'block';
+        document.getElementById('edit-name').value = p.name || "";
+        document.getElementById('edit-dp').value = p.avatar || "";
+        
+        // Count followers (who follows ME)
+        let followers = 0;
+        Object.values(userFollows).forEach(set => { if(set.has(u)) followers++; });
+        document.getElementById('follower-count').innerText = followers;
+        document.getElementById('following-count').innerText = userFollows[u]?.size || 0;
+    }
+
+    function closeProfilePage() { document.getElementById('profile-page').style.display = 'none'; }
+
+    async function saveFullProfile() {
+        const u = localStorage.getItem('app_user');
+        const msg = `[FULL_PROF] ${u} | ${document.getElementById('edit-name').value} | bio | ${document.getElementById('edit-dp').value} | 0 | city | 0 | country`;
+        await fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: "SYS_DATA", message: msg }) });
+        closeProfilePage(); loadFeed();
     }
 
     async function sharePost() {
@@ -257,8 +225,6 @@
         await fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: localStorage.getItem('app_user'), message: t }) });
         document.getElementById('postText').value = ""; loadFeed();
     }
-
-    function logout() { localStorage.clear(); location.reload(); }
 </script>
 </body>
 </html>
