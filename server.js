@@ -11,47 +11,41 @@ const TOKEN = process.env.MATRIX_ADMIN_TOKEN;
 const ROOM = process.env.MATRIX_ROOM_ID;
 const BASE_URL = "https://matrix.org/_matrix/client/r0";
 
-// Simple "Database" in memory
 const users = {}; 
 
-// Registration API
+// Auth Routes
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: "Missing fields" });
-    if (users[username]) return res.status(400).json({ error: "User exists" });
-    
+    if (users[username]) return res.status(400).json({ error: "Exists" });
     users[username] = password;
     res.json({ success: true });
 });
 
-// Login API
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
-    if (users[username] === password) {
-        res.json({ success: true });
-    } else {
-        res.status(401).json({ error: "Invalid login" });
-    }
+    if (users[username] === password) res.json({ success: true });
+    else res.status(401).json({ error: "Invalid" });
 });
 
-// Stealth Feed API
+// GET FEED: Now includes the event_id for deleting
 app.get('/api/feed', async (req, res) => {
     try {
         const response = await axios.get(`${BASE_URL}/rooms/${encodeURIComponent(ROOM)}/messages?limit=50&dir=b&access_token=${TOKEN}`);
         const cleanPosts = response.data.chunk
             .filter(m => m.type === "m.room.message" && m.content.body)
             .map(m => ({
+                id: m.event_id, // CRITICAL: This is the database ID
                 user: m.sender.split(':')[0].replace('@',''),
                 text: m.content.body,
                 time: m.origin_server_ts
             }));
         res.json(cleanPosts);
     } catch (err) {
-        res.status(500).json({ error: "Shield: Feed Blocked" });
+        res.status(500).json({ error: "Feed Error" });
     }
 });
 
-// Stealth Post API
+// POST MESSAGE
 app.post('/api/share', async (req, res) => {
     try {
         const { username, message } = req.body;
@@ -61,9 +55,23 @@ app.post('/api/share', async (req, res) => {
         });
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ error: "Shield: Posting Blocked" });
+        res.status(500).json({ error: "Post Error" });
+    }
+});
+
+// DELETE MESSAGE: The new "Redaction" route
+app.delete('/api/delete/:eventId', async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        await axios.put(
+            `${BASE_URL}/rooms/${encodeURIComponent(ROOM)}/redact/${eventId}/${Date.now()}?access_token=${TOKEN}`,
+            {}
+        );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: "Delete Error" });
     }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Shield Online"));
+app.listen(PORT, () => console.log("Shield Online with Delete Support"));
