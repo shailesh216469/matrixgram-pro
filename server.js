@@ -4,7 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-app.set('trust proxy', true); // Ensures real IP capture on Render/Cloudflare
+app.set('trust proxy', true);
 app.use(express.json());
 app.use(cors());
 
@@ -12,12 +12,11 @@ const TOKEN = process.env.MATRIX_ADMIN_TOKEN;
 const ROOM = process.env.MATRIX_ROOM_ID;
 const BASE_URL = "https://matrix.org/_matrix/client/r0";
 
-const users = {}; // Temporary in-memory user store
+const users = {}; 
 
-// Auth Routes
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
-    if (users[username]) return res.status(400).json({ error: "User already exists" });
+    if (users[username]) return res.status(400).json({ error: "Exists" });
     users[username] = password;
     res.json({ success: true });
 });
@@ -25,10 +24,9 @@ app.post('/api/register', (req, res) => {
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     if (users[username] === password) res.json({ success: true });
-    else res.status(401).json({ error: "Invalid credentials" });
+    else res.status(401).json({ error: "Invalid" });
 });
 
-// Feed Logic
 app.get('/api/feed', async (req, res) => {
     try {
         const response = await axios.get(`${BASE_URL}/rooms/${encodeURIComponent(ROOM)}/messages?limit=500&dir=b&access_token=${TOKEN}`);
@@ -41,10 +39,9 @@ app.get('/api/feed', async (req, res) => {
                 time: m.origin_server_ts
             }));
         res.json(cleanPosts);
-    } catch (err) { res.status(500).json({ error: "Feed Sync Error" }); }
+    } catch (err) { res.status(500).json({ error: "Feed Error" }); }
 });
 
-// Post Logic with IP Metadata
 app.post('/api/share', async (req, res) => {
     try {
         const { username, message } = req.body;
@@ -54,16 +51,8 @@ app.post('/api/share', async (req, res) => {
             msgtype: "m.text"
         });
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: "Matrix Transmission Error" }); }
-});
-
-// Admin Redaction
-app.delete('/api/delete/:eventId', async (req, res) => {
-    try {
-        await axios.put(`${BASE_URL}/rooms/${encodeURIComponent(ROOM)}/redact/${req.params.eventId}/${Date.now()}?access_token=${TOKEN}`, {});
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: "Redaction Error" }); }
+    } catch (err) { res.status(500).json({ error: "Post Error" }); }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Shield Active on Port ${PORT}`));
+app.listen(PORT, () => console.log("Shield Online: " + PORT));
