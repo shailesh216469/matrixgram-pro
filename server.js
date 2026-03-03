@@ -12,6 +12,7 @@ const TOKEN = process.env.MATRIX_ADMIN_TOKEN;
 const ROOM = process.env.MATRIX_ROOM_ID;
 const BASE_URL = "https://matrix.org/_matrix/client/r0";
 
+// Simple in-memory user store (Reset on restart)
 const users = {}; 
 
 app.post('/api/register', (req, res) => {
@@ -29,7 +30,7 @@ app.post('/api/login', (req, res) => {
 
 app.get('/api/feed', async (req, res) => {
     try {
-        const response = await axios.get(`${BASE_URL}/rooms/${encodeURIComponent(ROOM)}/messages?limit=500&dir=b&access_token=${TOKEN}`);
+        const response = await axios.get(`${BASE_URL}/rooms/${encodeURIComponent(ROOM)}/messages?limit=1000&dir=b&access_token=${TOKEN}`);
         const cleanPosts = response.data.chunk
             .filter(m => m.type === "m.room.message" && m.content.body)
             .map(m => ({
@@ -39,7 +40,7 @@ app.get('/api/feed', async (req, res) => {
                 time: m.origin_server_ts
             }));
         res.json(cleanPosts);
-    } catch (err) { res.status(500).json({ error: "Feed Error" }); }
+    } catch (err) { res.status(500).json({ error: "Sync Failed" }); }
 });
 
 app.post('/api/share', async (req, res) => {
@@ -51,19 +52,15 @@ app.post('/api/share', async (req, res) => {
             msgtype: "m.text"
         });
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: "Post Error" }); }
+    } catch (err) { res.status(500).json({ error: "Post Failed" }); }
 });
 
-// NEW: Delete Post Feature
 app.delete('/api/delete/:eventId', async (req, res) => {
     try {
-        const eventId = req.params.eventId;
-        await axios.put(`${BASE_URL}/rooms/${encodeURIComponent(ROOM)}/redact/${eventId}/${Date.now()}?access_token=${TOKEN}`, {});
+        await axios.put(`${BASE_URL}/rooms/${encodeURIComponent(ROOM)}/redact/${req.params.eventId}/${Date.now()}?access_token=${TOKEN}`, {});
         res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: "Deletion Failed" });
-    }
+    } catch (err) { res.status(500).json({ error: "Delete Failed" }); }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Shield Online: " + PORT));
+app.listen(PORT, () => console.log(`Stealth Server active on ${PORT}`));
