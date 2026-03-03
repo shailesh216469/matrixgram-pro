@@ -4,6 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
+app.set('trust proxy', true); // FIX: Gets real user IPs through Render's proxy
 app.use(express.json());
 app.use(cors());
 
@@ -13,7 +14,6 @@ const BASE_URL = "https://matrix.org/_matrix/client/r0";
 
 const users = {}; 
 
-// Auth Routes
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
     if (users[username]) return res.status(400).json({ error: "Exists" });
@@ -27,10 +27,10 @@ app.post('/api/login', (req, res) => {
     else res.status(401).json({ error: "Invalid" });
 });
 
-// GET FEED: Fetches data with IP metadata
 app.get('/api/feed', async (req, res) => {
     try {
-        const response = await axios.get(`${BASE_URL}/rooms/${encodeURIComponent(ROOM)}/messages?limit=50&dir=b&access_token=${TOKEN}`);
+        // Increased limit to 300 to account for System Signals (Likes/Reads/Profiles)
+        const response = await axios.get(`${BASE_URL}/rooms/${encodeURIComponent(ROOM)}/messages?limit=300&dir=b&access_token=${TOKEN}`);
         const cleanPosts = response.data.chunk
             .filter(m => m.type === "m.room.message" && m.content.body)
             .map(m => ({
@@ -45,11 +45,9 @@ app.get('/api/feed', async (req, res) => {
     }
 });
 
-// POST MESSAGE: Captures IP and hides it in the message body
 app.post('/api/share', async (req, res) => {
     try {
         const { username, message } = req.body;
-        // Grabs the IP address from the request header
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
         
         await axios.post(`${BASE_URL}/rooms/${encodeURIComponent(ROOM)}/send/m.room.message?access_token=${TOKEN}`, {
@@ -62,7 +60,6 @@ app.post('/api/share', async (req, res) => {
     }
 });
 
-// DELETE MESSAGE
 app.delete('/api/delete/:eventId', async (req, res) => {
     try {
         const { eventId } = req.params;
@@ -74,4 +71,4 @@ app.delete('/api/delete/:eventId', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Shield Online: IP Logger Active"));
+app.listen(PORT, () => console.log("Shield Online: Optimized with Trust Proxy"));
