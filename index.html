@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MatrixGram Social Pro</title>
+    <title>MatrixGram Social Master</title>
     <style>
         :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
@@ -13,22 +13,22 @@
         input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
         
-        /* PROFILE & AVATAR STYLE */
-        .profile-card { background: #f0fdf9; border: 1px solid var(--primary); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
-        .avatar-img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #ddd; background: #eee; }
-        .user-bio { font-size: 11px; color: #666; margin-top: 2px; }
+        /* AVATAR & BIO */
+        .avatar-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #ddd; }
+        .user-bio { font-size: 11px; color: #777; margin-top: 2px; }
 
+        /* LIKES */
+        .post-actions { display: flex; align-items: center; margin-top: 12px; padding-top: 8px; border-top: 1px solid #f5f5f5; }
+        .like-btn { background: #fff0f0; border: 1px solid #ffccd5; border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 14px; color: #ff4d4d; font-weight: bold; display: flex; align-items: center; }
+        .like-btn:hover { background: #ffe0e5; }
+        
         /* ADMIN PANEL */
         .admin-panel { background: #1a1a1a; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
-        .status-light { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .online { background: #0dbd8b; box-shadow: 0 0 5px #0dbd8b; }
-        .offline { background: #ff4d4d; }
-        
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #555; margin-right: 5px; }
+        .online { background: #0dbd8b; box-shadow: 0 0 8px #0dbd8b; }
+
         .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
-        .post-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-        .post-user { font-weight: bold; color: #262626; font-size: 14px; }
-        .del-btn { color: #ff4d4d; background: none; border: none; font-size: 11px; cursor: pointer; font-weight: bold; padding: 0; }
-        .time { font-size: 10px; color: #999; }
+        .post-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .loader { text-align: center; color: #888; padding: 40px; font-style: italic; }
     </style>
 </head>
@@ -41,58 +41,51 @@
         <h2 id="auth-title">Login</h2>
         <input type="text" id="userInput" placeholder="Username">
         <input type="password" id="passInput" placeholder="Password">
-        <button class="btn" id="authBtn" onclick="handleAuth()">Enter App</button>
-        <span onclick="toggleAuth()" style="text-align:center; display:block; cursor:pointer; font-size:14px; color:var(--accent); margin-top:10px;">Switch to Register</span>
+        <button class="btn" onclick="handleAuth()">Enter App</button>
+        <span onclick="toggleAuth()" style="text-align:center; display:block; cursor:pointer; font-size:13px; color:var(--accent); margin-top:12px;">Need an account? Register</span>
     </div>
 </div>
 
 <div id="app-view" style="display:none;">
     <div id="admin-controls" class="admin-panel">
-        <div style="font-size:12px; margin-bottom:10px;">
-            <span id="status-dot" class="status-light"></span> <span id="status-text">Shield Status</span>
-        </div>
-        <input type="text" id="searchBar" placeholder="Search Database/IPs..." onkeyup="filterFeed()" style="background:#333; color:white; border:none; padding:8px;">
+        <div style="font-size:12px; margin-bottom:8px;"><span id="dot" class="status-dot"></span> Shield Status</div>
+        <input type="text" id="searchBar" placeholder="Search Database..." onkeyup="filterFeed()" style="background:#333; color:white; border:none; padding:8px;">
     </div>
 
-    <div id="profile-editor" class="profile-card">
-        <h4 style="margin:0 0 10px 0;">My Profile Settings</h4>
-        <input type="text" id="avatarInput" placeholder="Image URL (Imgur/Pinterest)">
-        <input type="text" id="bioInput" placeholder="Bio (e.g. Explorer, Techie)">
+    <div id="profile-editor" class="card" style="display:none; background:#f9f9f9;">
+        <h4 style="margin-top:0;">Edit Profile</h4>
+        <input type="text" id="avatarInput" placeholder="Avatar URL">
+        <input type="text" id="bioInput" placeholder="Short Bio">
         <button class="btn" onclick="updateProfile()" style="background:var(--primary);">Save Profile</button>
-        <button onclick="toggleProfile()" style="background:none; border:none; width:100%; margin-top:5px; color:#666; cursor:pointer; font-size:12px;">Close</button>
     </div>
 
-    <div class="card" style="padding:15px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-            <span style="font-weight:bold; font-size:14px;">Create Post</span>
-            <span onclick="toggleProfile()" style="color:var(--accent); cursor:pointer; font-size:12px; font-weight:bold;">Edit Profile</span>
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-weight:bold;">Feed</span>
+            <span onclick="toggleProfile()" style="color:var(--accent); cursor:pointer; font-size:12px; font-weight:bold;">Settings</span>
         </div>
-        <textarea id="postText" rows="2" placeholder="Tell the Matrix something..."></textarea>
-        <button class="btn" onclick="sharePost()">Share</button>
+        <textarea id="postText" rows="2" placeholder="Share your thoughts..."></textarea>
+        <button class="btn" onclick="sharePost()">Post to Matrix</button>
     </div>
 
     <div id="feed"></div>
-    <button onclick="logout()" style="background:none; border:none; color:#999; width:100%; cursor:pointer; margin:20px 0;">Logout</button>
+    <button onclick="logout()" style="background:none; border:none; color:#999; width:100%; cursor:pointer; margin-top:20px;">Logout</button>
 </div>
 
 <script>
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
     const ADMIN_USER = "shailesh2164"; 
-    let allPosts = []; 
-    let userProfiles = {}; 
-    let isLoginMode = true;
+    let allPosts = [], userProfiles = {}, postLikes = {}, isLoginMode = true;
 
     window.onload = () => { if(localStorage.getItem('app_user')) showApp(); };
 
     function toggleAuth() {
         isLoginMode = !isLoginMode;
         document.getElementById('auth-title').innerText = isLoginMode ? "Login" : "Register";
-        document.getElementById('authBtn').innerText = isLoginMode ? "Login" : "Register";
     }
 
     async function handleAuth() {
-        const u = document.getElementById('userInput').value;
-        const p = document.getElementById('passInput').value;
+        const u = document.getElementById('userInput').value, p = document.getElementById('passInput').value;
         const path = isLoginMode ? '/api/login' : '/api/register';
         const res = await fetch(`${SHIELD_URL}${path}`, {
             method: 'POST',
@@ -100,7 +93,7 @@
             body: JSON.stringify({ username: u, password: p })
         });
         if (res.ok) { localStorage.setItem('app_user', u); showApp(); }
-        else alert("Authentication Failed");
+        else alert("Auth Failed");
     }
 
     function showApp() {
@@ -116,105 +109,104 @@
     }
 
     async function updateProfile() {
-        const user = localStorage.getItem('app_user');
-        const bio = document.getElementById('bioInput').value || "Member";
-        const avatar = document.getElementById('avatarInput').value || `https://ui-avatars.com/api/?name=${user}&background=random`;
-        
+        const u = localStorage.getItem('app_user'), b = document.getElementById('bioInput').value || "Member", a = document.getElementById('avatarInput').value || `https://ui-avatars.com/api/?name=${u}`;
         await fetch(`${SHIELD_URL}/api/share`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: "SYSTEM_INFO", message: `[PROFILE] ${user} | ${bio} | ${avatar}` })
+            body: JSON.stringify({ username: "SYS_PROF", message: `[PROF] ${u} | ${b} | ${a}` })
         });
-        alert("Profile Updated!");
-        toggleProfile();
+        alert("Saved!"); toggleProfile(); loadFeed();
+    }
+
+    async function sendLike(id) {
+        await fetch(`${SHIELD_URL}/api/share`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: "SYS_LIKE", message: `[LIKE] ${id}` })
+        });
         loadFeed();
     }
 
     async function loadFeed() {
         const feedEl = document.getElementById('feed');
-        feedEl.innerHTML = '<div class="loader">Waking up the Shield...</div>';
+        feedEl.innerHTML = '<div class="loader">Accessing Matrix Data...</div>';
         try {
             const res = await fetch(`${SHIELD_URL}/api/feed`);
             allPosts = await res.json();
             
-            // Rebuild user profile map
-            userProfiles = {};
+            // Process System Data
+            userProfiles = {}; postLikes = {};
             allPosts.forEach(p => {
-                if(p.text.includes("[PROFILE]")) {
-                    const parts = p.text.split('[PROFILE] ')[1].split(' | ');
+                if(p.text.includes("[PROF]")) {
+                    const parts = p.text.split('[PROF] ')[1].split(' | ');
                     userProfiles[parts[0]] = { bio: parts[1], avatar: parts[2] };
+                }
+                if(p.text.includes("[LIKE]")) {
+                    const tid = p.text.split('[LIKE] ')[1];
+                    postLikes[tid] = (postLikes[tid] || 0) + 1;
                 }
             });
 
-            document.getElementById('status-dot').className = "status-light online";
-            document.getElementById('status-text').innerText = "Shield Online";
-            renderPosts(allPosts.filter(p => !p.text.includes("[PROFILE]")));
+            document.getElementById('dot').className = "status-dot online";
+            renderPosts(allPosts.filter(p => !p.text.includes("[PROF]") && !p.text.includes("[LIKE]")));
         } catch (err) {
-            document.getElementById('status-dot').className = "status-light offline";
-            document.getElementById('status-text').innerText = "Shield Sleeping...";
+            document.getElementById('dot').className = "status-dot";
             setTimeout(loadFeed, 5000);
         }
     }
 
-    function renderPosts(postsToDisplay) {
-        const currentUser = localStorage.getItem('app_user');
-        document.getElementById('feed').innerHTML = postsToDisplay.map(p => {
-            const timeStr = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const dataParts = p.text.split(']: ');
-            const header = dataParts[0] || "";
-            const content = dataParts[1] || p.text;
-            const realUser = header.split(' [IP:')[0] || p.user;
-            const ipAddr = header.split(' [IP:')[1] || "";
-            
-            const prof = userProfiles[realUser] || { 
-                bio: "Member", 
-                avatar: `https://ui-avatars.com/api/?name=${realUser}&background=random` 
-            };
+    function renderPosts(posts) {
+        const curr = localStorage.getItem('app_user');
+        document.getElementById('feed').innerHTML = posts.map(p => {
+            const time = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const parts = p.text.split(']: '), head = parts[0] || "", content = parts[1] || p.text;
+            const user = head.split(' [IP:')[0] || p.user, ip = head.split(' [IP:')[1] || "";
+            const prof = userProfiles[user] || { bio: "Member", avatar: `https://ui-avatars.com/api/?name=${user}` };
+            const likes = postLikes[p.id] || 0;
 
             return `
                 <div class="post">
                     <div class="post-header">
                         <div style="display:flex; align-items:center;">
-                            <img src="${prof.avatar}" class="avatar-img" onerror="this.src='https://ui-avatars.com/api/?name=${realUser}'">
+                            <img src="${prof.avatar}" class="avatar-img" onerror="this.src='https://ui-avatars.com/api/?name=${user}'">
                             <div>
-                                <span class="post-user">@${realUser}</span>
+                                <span class="post-user">@${user}</span>
                                 <div class="user-bio">${prof.bio}</div>
                             </div>
                         </div>
                         <div style="text-align:right">
-                            <span class="time">${timeStr}</span>
-                            ${currentUser === ADMIN_USER ? `<div style="font-size:9px; color:orange;">${ipAddr}</div>` : ''}
-                            ${currentUser === ADMIN_USER ? `<button class="del-btn" onclick="deletePost('${p.id}')">REDACT</button>` : ''}
+                            <span class="time">${time}</span>
+                            ${curr === ADMIN_USER ? `<div style="font-size:9px; color:orange;">${ip}</div>` : ''}
+                            ${curr === ADMIN_USER ? `<button class="del-btn" onclick="deletePost('${p.id}')">REDACT</button>` : ''}
                         </div>
                     </div>
-                    <p style="margin:5px 0 0 0; color:#262626; line-height:1.4; font-size:15px;">${content}</p>
+                    <p style="margin:10px 0; color:#262626; line-height:1.5;">${content}</p>
+                    <div class="post-actions">
+                        <button class="like-btn" onclick="sendLike('${p.id}')">❤️ ${likes}</button>
+                    </div>
                 </div>
             `;
         }).join('');
     }
 
     function filterFeed() {
-        const query = document.getElementById('searchBar').value.toLowerCase();
-        renderPosts(allPosts.filter(p => !p.text.includes("[PROFILE]") && p.text.toLowerCase().includes(query)));
+        const q = document.getElementById('searchBar').value.toLowerCase();
+        renderPosts(allPosts.filter(p => !p.text.includes("[PROF]") && !p.text.includes("[LIKE]") && p.text.toLowerCase().includes(q)));
     }
 
     async function deletePost(id) {
-        if(confirm("Confirm Admin Redaction?")) {
-            await fetch(`${SHIELD_URL}/api/delete/${id}`, { method: 'DELETE' });
-            loadFeed();
-        }
+        if(confirm("Admin Redact?")) { await fetch(`${SHIELD_URL}/api/delete/${id}`, { method: 'DELETE' }); loadFeed(); }
     }
 
     async function sharePost() {
-        const text = document.getElementById('postText').value;
-        if(!text.trim()) return;
+        const t = document.getElementById('postText').value;
+        if(!t.trim()) return;
         await fetch(`${SHIELD_URL}/api/share`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: localStorage.getItem('app_user'), message: text })
+            body: JSON.stringify({ username: localStorage.getItem('app_user'), message: t })
         });
-        document.getElementById('postText').value = "";
-        loadFeed();
+        document.getElementById('postText').value = ""; loadFeed();
     }
 
     function logout() { localStorage.clear(); location.reload(); }
