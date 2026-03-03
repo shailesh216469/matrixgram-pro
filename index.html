@@ -13,7 +13,10 @@
         input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
+        .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .post-user { font-weight: bold; color: var(--primary); }
+        .del-btn { color: #ff4d4d; background: none; border: none; font-size: 12px; cursor: pointer; font-weight: bold; }
+        .time { font-size: 10px; color: #999; }
         .toggle-link { text-align: center; font-size: 14px; color: var(--accent); cursor: pointer; display: block; margin-top: 10px; }
     </style>
 </head>
@@ -33,15 +36,14 @@
 
 <div id="app-view" style="display:none;">
     <div class="card">
-        <textarea id="postText" rows="2" placeholder="What's on your mind?"></textarea>
-        <button class="btn" id="sendBtn" onclick="sharePost()">Post</button>
+        <textarea id="postText" rows="2" placeholder="Share to the Matrix..."></textarea>
+        <button class="btn" onclick="sharePost()">Post</button>
     </div>
     <div id="feed"></div>
     <button onclick="logout()" style="background:none; border:none; color:#999; width:100%; cursor:pointer; margin-top:20px;">Logout</button>
 </div>
 
 <script>
-    // REPLACE THIS WITH YOUR ACTUAL RENDER URL
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
     let isLoginMode = true;
 
@@ -57,19 +59,13 @@
         const username = document.getElementById('userInput').value;
         const password = document.getElementById('passInput').value;
         const path = isLoginMode ? '/api/login' : '/api/register';
-
         const res = await fetch(`${SHIELD_URL}${path}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         });
-
-        if (res.ok) {
-            localStorage.setItem('app_user', username);
-            showApp();
-        } else {
-            alert("Auth Failed: Check credentials or if user exists.");
-        }
+        if (res.ok) { localStorage.setItem('app_user', username); showApp(); }
+        else { alert("Auth Failed"); }
     }
 
     function showApp() {
@@ -79,30 +75,37 @@
     }
 
     async function loadFeed() {
-    const res = await fetch(`${SHIELD_URL}/api/feed`);
-    const posts = await res.json();
-    document.getElementById('feed').innerHTML = posts.map(p => {
-        // Convert the Matrix timestamp to a readable time
-        const time = new Date(p.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const res = await fetch(`${SHIELD_URL}/api/feed`);
+        const posts = await res.json();
+        const currentUser = localStorage.getItem('app_user');
         
-        return `
-            <div class="post">
-                <div style="display: flex; justify-content: space-between;">
-                    <span class="post-user">@${p.user}</span>
-                    <span style="font-size: 10px; color: #999;">${time}</span>
+        document.getElementById('feed').innerHTML = posts.map(p => {
+            const timeStr = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            return `
+                <div class="post">
+                    <div class="post-header">
+                        <div>
+                            <span class="post-user">@${p.user}</span>
+                            <span class="time">${timeStr}</span>
+                        </div>
+                        ${currentUser === 'shailesh2164' ? `<button class="del-btn" onclick="deletePost('${p.id}')">Delete</button>` : ''}
+                    </div>
+                    <p style="margin:0;">${p.text}</p>
                 </div>
-                <p style="margin: 8px 0 0 0; color: #262626;">${p.text}</p>
-            </div>
-        `;
-    }).join('');
-}
+            `;
+        }).join('');
+    }
 
+    async function deletePost(eventId) {
+        if(!confirm("Delete this message?")) return;
+        const res = await fetch(`${SHIELD_URL}/api/delete/${eventId}`, { method: 'DELETE' });
+        if(res.ok) loadFeed();
+    }
 
     async function sharePost() {
         const text = document.getElementById('postText').value;
         const user = localStorage.getItem('app_user');
         if(!text.trim()) return;
-
         await fetch(`${SHIELD_URL}/api/share`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
