@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MatrixGram Admin Pro</title>
+    <title>MatrixGram Stealth Control</title>
     <style>
         :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
@@ -12,20 +12,24 @@
         .card { background: white; border: 1px solid #dbdbdb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .admin-panel { background: #333; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
-        .stats-bar { text-align: center; margin-bottom: 15px; font-size: 13px; color: #888; background: #eee; padding: 5px; border-radius: 20px; }
+        
+        /* ADMIN PANEL STYLING */
+        .admin-panel { background: #1a1a1a; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: none; border: 1px solid #444; }
+        .admin-stats { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 13px; text-align: center; }
+        
         .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
         .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .post-user { font-weight: bold; color: var(--primary); }
-        .del-btn { color: #ff4d4d; background: none; border: none; font-size: 12px; cursor: pointer; }
+        .del-btn { color: #ff4d4d; background: none; border: none; font-size: 12px; cursor: pointer; font-weight: bold; }
         .time { font-size: 10px; color: #999; margin-left: 5px; }
         .toggle-link { text-align: center; font-size: 14px; color: var(--accent); cursor: pointer; display: block; margin-top: 10px; }
-        #searchBar { border: 2px solid var(--primary); margin-top: 10px; }
+        #searchBar { background: #333; color: white; border: 1px solid #555; }
+        #searchBar::placeholder { color: #aaa; }
     </style>
 </head>
 <body>
 
-<div class="navbar">MatrixGram Stealth Control</div>
+<div class="navbar">MatrixGram Stealth</div>
 
 <div id="login-view">
     <div class="card">
@@ -39,18 +43,19 @@
 
 <div id="app-view" style="display:none;">
     <div id="admin-controls" class="admin-panel">
-        <h3 style="margin-top:0;">Admin Control Panel</h3>
+        <h3 style="margin-top:0; color:var(--primary);">Admin Dashboard</h3>
+        
+        <div class="admin-stats">
+            Database Volume: <span id="post-count" style="color:white; font-size:16px;">0</span> records
+        </div>
+
         <input type="text" id="searchBar" placeholder="Search Matrix Database..." onkeyup="filterFeed()">
-        <button onclick="loadFeed()" style="width:100%; margin-top:5px; padding:5px; cursor:pointer;">Refresh All Data</button>
+        <button onclick="loadFeed()" style="width:100%; margin-top:5px; padding:8px; cursor:pointer; background:#444; color:white; border:none; border-radius:4px;">Refresh Database</button>
     </div>
 
     <div class="card">
-        <textarea id="postText" rows="2" placeholder="Announce to users..."></textarea>
+        <textarea id="postText" rows="2" placeholder="What's on your mind?"></textarea>
         <button class="btn" onclick="sharePost()">Post</button>
-    </div>
-
-    <div class="stats-bar">
-        System Load: <span id="post-count">0</span> records
     </div>
 
     <div id="feed"></div>
@@ -59,11 +64,9 @@
 
 <script>
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
-    let allPosts = []; // Global store for searching
+    let allPosts = []; 
     let isLoginMode = true;
-
-    // Define your Admin Username here
-    const ADMIN_USER = "shailesh2164"; 
+    const ADMIN_USER = "shailesh2164"; // Your admin username
 
     window.onload = () => { if(localStorage.getItem('app_user')) showApp(); };
 
@@ -91,7 +94,7 @@
         document.getElementById('login-view').style.display = 'none';
         document.getElementById('app-view').style.display = 'block';
         
-        // Show Admin Panel only for you
+        // Security check for Admin Panel
         if(currentUser === ADMIN_USER) {
             document.getElementById('admin-controls').style.display = 'block';
         }
@@ -106,7 +109,10 @@
 
     function renderPosts(postsToDisplay) {
         const currentUser = localStorage.getItem('app_user');
-        document.getElementById('post-count').innerText = postsToDisplay.length;
+        
+        // Update counter (only visible if admin panel is showing)
+        const countEl = document.getElementById('post-count');
+        if(countEl) countEl.innerText = allPosts.length;
 
         document.getElementById('feed').innerHTML = postsToDisplay.map(p => {
             const timeStr = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -123,13 +129,12 @@
                         </div>
                         ${currentUser === ADMIN_USER ? `<button class="del-btn" onclick="deletePost('${p.id}')">REDACT</button>` : ''}
                     </div>
-                    <p style="margin:0;">${messageContent}</p>
+                    <p style="margin:0; color:#262626;">${messageContent}</p>
                 </div>
             `;
         }).join('');
     }
 
-    // SEARCH DATABASE FUNCTION
     function filterFeed() {
         const query = document.getElementById('searchBar').value.toLowerCase();
         const filtered = allPosts.filter(p => p.text.toLowerCase().includes(query));
@@ -137,7 +142,7 @@
     }
 
     async function deletePost(id) {
-        if(!confirm("ADMIN ACTION: Redact this record from Matrix?")) return;
+        if(!confirm("ADMIN: Redact this record permanently?")) return;
         const res = await fetch(`${SHIELD_URL}/api/delete/${id}`, { method: 'DELETE' });
         if(res.ok) loadFeed();
     }
