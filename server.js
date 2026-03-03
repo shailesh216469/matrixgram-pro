@@ -54,5 +54,16 @@ app.post('/api/share', async (req, res) => {
     } catch (err) { res.status(500).json({ error: "Post Error" }); }
 });
 
+// NEW: Delete Post Feature
+app.delete('/api/delete/:eventId', async (req, res) => {
+    try {
+        const eventId = req.params.eventId;
+        await axios.put(`${BASE_URL}/rooms/${encodeURIComponent(ROOM)}/redact/${eventId}/${Date.now()}?access_token=${TOKEN}`, {});
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: "Deletion Failed" });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Shield Online: " + PORT));
