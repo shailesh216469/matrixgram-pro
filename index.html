@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MatrixGram Elite</title>
+    <title>MatrixGram Pro</title>
     <style>
-        :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; --border: #dbdbdb; }
+        :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #f0f2f5; --border: #dbdbdb; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
         
         .navbar { background: white; border-bottom: 1px solid var(--border); width: 100%; padding: 10px 0; position: sticky; top: 0; display: flex; justify-content: center; z-index: 100; }
@@ -14,43 +14,48 @@
         .nav-avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; background: #eee; cursor: pointer; }
 
         #app-view { width: 100%; max-width: 500px; padding: 15px; box-sizing: border-box; }
-        .card { background: white; border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .card { background: white; border: 1px solid var(--border); padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         
-        input, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 5px; box-sizing: border-box; font-size: 14px; outline: none; }
-        .search-box { background: #efefef; border: none; padding: 12px; margin-bottom: 10px; border-radius: 8px; }
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; }
+        .search-box { background: white; border: 1px solid var(--border); padding: 12px; margin-bottom: 15px; border-radius: 8px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
 
         .feed-toggle { display: flex; gap: 10px; margin-bottom: 15px; }
-        .toggle-btn { flex: 1; padding: 8px; border: 1px solid var(--border); background: white; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 600; color: #666; }
+        .toggle-btn { flex: 1; padding: 10px; border: 1px solid var(--border); background: white; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; color: #65676b; }
         .active-toggle { background: var(--primary); color: white; border-color: var(--primary); }
 
-        .btn { width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .btn-follow { background: #efefef; color: black; padding: 5px 12px; border-radius: 4px; font-size: 12px; border: none; cursor: pointer; font-weight: 600; }
+        .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-follow { background: #e4e6eb; color: #050505; padding: 6px 15px; border-radius: 6px; font-size: 12px; border: none; cursor: pointer; font-weight: 600; }
         .btn-following { background: var(--primary); color: white; }
 
-        #profile-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .post { background: white; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 15px; padding: 15px; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 12px; background: #f0f2f5; }
+        .post-actions { display: flex; align-items: center; gap: 20px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f0f2f5; }
         
-        .post { background: white; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 15px; padding: 15px; position: relative; }
-        .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid #eee; }
-        .post-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 8px; border-top: 1px solid #f0f0f0; }
+        .action-btn { background: none; border: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #65676b; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
+        .liked { color: #f3425f; }
+        .del-btn { color: #bcc0c4; border: none; background: none; font-size: 20px; cursor: pointer; line-height: 1; }
+        .del-btn:hover { color: #f3425f; }
+
+        .comment-section { margin-top: 12px; background: #f0f2f5; border-radius: 8px; padding: 10px; font-size: 13px; display: none; }
+        .comment-item { margin-bottom: 8px; background: white; padding: 8px; border-radius: 10px; border: 1px solid #e4e6eb; }
+        .comment-input-row { display: flex; gap: 8px; margin-top: 10px; }
+        .comment-input-row input { margin-bottom: 0; padding: 8px; border-radius: 20px; }
         
-        .like-btn { background: none; border: 1px solid #ffccd5; border-radius: 20px; padding: 4px 12px; cursor: pointer; font-size: 13px; font-weight: bold; color: #ff4d4d; }
-        .liked { background: #ff4d4d !important; color: white !important; }
-        .del-btn { color: #ccc; border: none; background: none; font-size: 18px; cursor: pointer; padding: 0 5px; }
-        .del-btn:hover { color: #ff4d4d; }
+        #profile-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; padding: 25px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <div class="navbar">
     <div class="nav-content">
-        <div class="nav-logo" onclick="window.location.reload()">MatrixGram</div>
-        <img id="nav-avatar-img" src="" class="nav-avatar" onclick="openProfilePage()">
+        <div class="nav-logo" onclick="location.reload()">MatrixGram</div>
+        <img id="nav-avatar-img" src="" class="nav-avatar" onclick="openProfilePage()" onerror="this.src='https://ui-avatars.com/api/?name=User'">
     </div>
 </div>
 
 <div id="app-view">
-    <input type="text" id="globalSearch" class="search-box" placeholder="Search people or posts..." onkeyup="renderPosts()">
+    <input type="text" id="globalSearch" class="search-box" placeholder="🔍 Search posts or usernames..." onkeyup="renderPosts()">
     
     <div class="feed-toggle">
         <button id="btn-all" class="toggle-btn active-toggle" onclick="setFeedMode('all')">Discovery</button>
@@ -58,25 +63,26 @@
     </div>
 
     <div class="card">
-        <textarea id="postText" rows="2" placeholder="What's the status?"></textarea>
+        <textarea id="postText" rows="2" placeholder="What's on your mind?"></textarea>
         <button class="btn" onclick="sharePost()">Post to Matrix</button>
     </div>
     <div id="feed"></div>
 </div>
 
 <div id="profile-page">
-    <button onclick="closeProfilePage()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold; margin-bottom:20px;">← Back</button>
-    <h2>Profile Settings</h2>
-    <input type="text" id="edit-name" placeholder="Display Name">
-    <input type="text" id="edit-dp" placeholder="Avatar URL">
-    <textarea id="edit-bio" placeholder="Bio"></textarea>
-    <button class="btn" onclick="saveFullProfile()">Update Profile</button>
-    <button onclick="logout()" style="margin-top:20px; color:red; background:none; border:none; width:100%; cursor:pointer;">Logout Session</button>
+    <button onclick="closeProfilePage()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold; font-size:16px;">✕ Close</button>
+    <h2 style="margin-top:20px;">Profile Settings</h2>
+    <label style="font-size:12px; color:#666;">Display Name</label>
+    <input type="text" id="edit-name" placeholder="Name">
+    <label style="font-size:12px; color:#666;">Avatar Image URL</label>
+    <input type="text" id="edit-dp" placeholder="https://image-link.com/photo.jpg">
+    <button class="btn" onclick="saveFullProfile()" style="background:var(--primary);">Save Profile</button>
+    <button onclick="logout()" style="margin-top:30px; color:#f3425f; border:none; background:none; cursor:pointer; width:100%; font-weight:bold;">Log Out</button>
 </div>
 
 <script>
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
-    let allPosts = [], userProfiles = {}, postLikes = {}, userFollows = {}, feedMode = 'all';
+    let allPosts = [], userProfiles = {}, postLikes = {}, userFollows = {}, postComments = {}, feedMode = 'all';
 
     window.onload = () => { if(localStorage.getItem('app_user')) loadFeed(); else location.href='login.html'; };
 
@@ -87,48 +93,42 @@
         renderPosts();
     }
 
-    async function toggleLike(id) {
+    async function handleAction(type, target, extra = "") {
         const u = localStorage.getItem('app_user');
-        const type = postLikes[id]?.has(u) ? "[UNLIKE]" : "[LIKE]";
+        if(type === 'COMMENT' && !extra.trim()) return;
+        
         await fetch(`${SHIELD_URL}/api/share`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: "SYS_ACTION", message: `${type} ${id} | ${u}` })
-        });
-        loadFeed();
-    }
-
-    async function toggleFollow(target) {
-        const u = localStorage.getItem('app_user');
-        const type = userFollows[u]?.has(target) ? "[UNFOLLOW]" : "[FOLLOW]";
-        await fetch(`${SHIELD_URL}/api/share`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: "SYS_ACTION", message: `${type} ${target} | ${u}` })
+            body: JSON.stringify({ username: "SYS_ACTION", message: `[${type}] ${target} | ${u} ${extra ? '| ' + extra : ''}` })
         });
         loadFeed();
     }
 
     async function deletePost(id) {
-        if(!confirm("Delete this post permanently?")) return;
-        const res = await fetch(`${SHIELD_URL}/api/delete/${id}`, { method: 'DELETE' });
-        if(res.ok) loadFeed();
+        if(confirm("Delete this post?")) {
+            await fetch(`${SHIELD_URL}/api/delete/${id}`, { method: 'DELETE' });
+            loadFeed();
+        }
     }
 
     async function loadFeed() {
         const res = await fetch(`${SHIELD_URL}/api/feed`);
         allPosts = await res.json();
-        userProfiles = {}; postLikes = {}; userFollows = {};
+        userProfiles = {}; postLikes = {}; userFollows = {}; postComments = {};
 
         allPosts.forEach(p => {
             if(p.text.includes("[FULL_PROF]")) {
                 const parts = p.text.split('[FULL_PROF] ')[1].split(' | ');
                 userProfiles[parts[0]] = { name: parts[1], avatar: parts[3] };
             } else if(p.text.includes("[LIKE]")) {
-                const parts = p.text.split('[LIKE] ')[1].split(' | ');
-                if(!postLikes[parts[0]]) postLikes[parts[0]] = new Set();
-                postLikes[parts[0]].add(parts[1]);
+                const id = p.text.split('[LIKE] ')[1].split(' | ')[0];
+                const user = p.text.split(' | ')[1];
+                if(!postLikes[id]) postLikes[id] = new Set();
+                postLikes[id].add(user);
             } else if(p.text.includes("[UNLIKE]")) {
-                const parts = p.text.split('[UNLIKE] ')[1].split(' | ');
-                if(postLikes[parts[0]]) postLikes[parts[0]].delete(parts[1]);
+                const id = p.text.split('[UNLIKE] ')[1].split(' | ')[0];
+                const user = p.text.split(' | ')[1];
+                if(postLikes[id]) postLikes[id].delete(user);
             } else if(p.text.includes("[FOLLOW]")) {
                 const parts = p.text.split('[FOLLOW] ')[1].split(' | ');
                 if(!userFollows[parts[1]]) userFollows[parts[1]] = new Set();
@@ -136,12 +136,16 @@
             } else if(p.text.includes("[UNFOLLOW]")) {
                 const parts = p.text.split('[UNFOLLOW] ')[1].split(' | ');
                 if(userFollows[parts[1]]) userFollows[parts[1]].delete(parts[0]);
+            } else if(p.text.includes("[COMMENT]")) {
+                const parts = p.text.split('[COMMENT] ')[1].split(' | ');
+                if(!postComments[parts[0]]) postComments[parts[0]] = [];
+                postComments[parts[0]].push({ user: parts[1], text: parts[2] });
             }
         });
 
         const curr = localStorage.getItem('app_user');
-        const myAvatar = userProfiles[curr]?.avatar || "";
-        document.getElementById('nav-avatar-img').src = myAvatar || `https://ui-avatars.com/api/?name=${curr}`;
+        const myAvatar = userProfiles[curr]?.avatar || `https://ui-avatars.com/api/?name=${curr}`;
+        document.getElementById('nav-avatar-img').src = myAvatar;
         renderPosts();
     }
 
@@ -149,59 +153,83 @@
         const curr = localStorage.getItem('app_user');
         const q = document.getElementById('globalSearch').value.toLowerCase();
         
-        // AGGRESSIVE FILTER: Wipes out system chatter (SYS_READ, etc)
+        // AGGRESSIVE FILTER: Fixes the SYS_READ issues from your photos
         const filtered = allPosts.filter(p => {
-            const isSystem = p.text.startsWith("[") || ["SYS_ACTION", "SYS_DATA", "SYS_READ", "SYS_LIKE"].includes(p.user);
+            const isSystem = p.text.startsWith("[") || p.user.startsWith("SYS_");
             if(isSystem) return false;
 
             const parts = p.text.split(']: ');
-            const user = (parts[0] || "").split(' [IP')[0] || p.user;
-            const content = (parts[1] || p.text).toLowerCase();
-            const isFollowing = userFollows[curr]?.has(user);
+            const user = parts[0].split(' [IP')[0];
+            const content = (parts[1] || "").toLowerCase();
+            const profName = (userProfiles[user]?.name || "").toLowerCase();
 
-            if(feedMode === 'following' && !isFollowing && user !== curr) return false;
-            return content.includes(q) || user.toLowerCase().includes(q);
+            // Following Filter
+            if(feedMode === 'following' && !userFollows[curr]?.has(user) && user !== curr) return false;
+            
+            // Search Fix
+            return content.includes(q) || user.toLowerCase().includes(q) || profName.includes(q);
         });
 
         document.getElementById('feed').innerHTML = filtered.map(p => {
             const parts = p.text.split(']: '), user = parts[0].split(' [IP')[0], content = parts[1];
             const prof = userProfiles[user] || {};
             const likes = postLikes[p.id] || new Set();
-            const isLiked = likes.has(curr);
+            const comments = postComments[p.id] || [];
             const isFollowing = userFollows[curr]?.has(user);
 
             return `
                 <div class="post">
                     <div class="post-header">
                         <div style="display:flex; align-items:center;">
-                            <img src="${prof.avatar || 'https://ui-avatars.com/api/?name='+user}" class="avatar-img">
-                            <div style="font-weight:bold; font-size:14px;">${prof.name || user}</div>
+                            <img src="${prof.avatar || 'https://ui-avatars.com/api/?name='+user}" class="avatar-img" onerror="this.src='https://ui-avatars.com/api/?name=${user}'">
+                            <div>
+                                <div style="font-weight:bold; font-size:14px;">${prof.name || user}</div>
+                                <div style="font-size:11px; color:#65676b;">${new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                            </div>
                         </div>
-                        <div style="display:flex; align-items:center; gap:10px;">
+                        <div>
                             ${user !== curr ? `<button onclick="toggleFollow('${user}')" class="btn-follow ${isFollowing ? 'btn-following' : ''}">${isFollowing ? 'Following' : 'Follow'}</button>` : `<button class="del-btn" onclick="deletePost('${p.id}')">×</button>`}
                         </div>
                     </div>
-                    <div style="margin:8px 0; color:#262626;">${content}</div>
+                    <div style="font-size:15px; line-height:1.4; color:#050505;">${content}</div>
                     <div class="post-actions">
-                        <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${p.id}')">❤️ ${likes.size}</button>
+                        <button class="action-btn ${likes.has(curr) ? 'liked' : ''}" onclick="handleAction(postLikes['${p.id}']?.has('${curr}') ? 'UNLIKE' : 'LIKE', '${p.id}')">❤️ ${likes.size}</button>
+                        <button class="action-btn" onclick="toggleComments('${p.id}')">💬 ${comments.length}</button>
+                    </div>
+                    <div id="comments-${p.id}" class="comment-section">
+                        ${comments.map(c => `<div class="comment-item"><strong>${c.user}:</strong> ${c.text}</div>`).join('')}
+                        <div class="comment-input-row">
+                            <input type="text" id="input-${p.id}" placeholder="Write a comment...">
+                            <button class="btn" style="width:auto; padding:5px 15px;" onclick="handleAction('COMMENT', '${p.id}', document.getElementById('input-${p.id}').value)">Post</button>
+                        </div>
                     </div>
                 </div>`;
         }).join('');
     }
 
+    function toggleComments(id) {
+        const el = document.getElementById(`comments-${id}`);
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    }
+
     async function sharePost() {
         const val = document.getElementById('postText').value;
-        if(!val) return;
-        await fetch(`${SHIELD_URL}/api/share`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: localStorage.getItem('app_user'), message: val })
-        });
+        if(!val.trim()) return;
+        await fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: localStorage.getItem('app_user'), message: val }) });
         document.getElementById('postText').value = ""; loadFeed();
     }
 
+    function toggleFollow(t) { handleAction(userFollows[localStorage.getItem('app_user')]?.has(t) ? 'UNFOLLOW' : 'FOLLOW', t); }
     function openProfilePage() { document.getElementById('profile-page').style.display='block'; }
     function closeProfilePage() { document.getElementById('profile-page').style.display='none'; }
     function logout() { localStorage.clear(); location.reload(); }
+    
+    async function saveFullProfile() {
+        const u = localStorage.getItem('app_user');
+        const msg = `[FULL_PROF] ${u} | ${document.getElementById('edit-name').value} | bio | ${document.getElementById('edit-dp').value} | 0 | city | 0 | country`;
+        await fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: "SYS_DATA", message: msg }) });
+        closeProfilePage(); loadFeed();
+    }
 </script>
 </body>
 </html>
