@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MatrixGram Admin Panel</title>
+    <title>MatrixGram Stealth Control</title>
     <style>
         :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
@@ -12,15 +12,25 @@
         .card { background: white; border: 1px solid #dbdbdb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .admin-panel { background: #1a1a1a; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: none; }
+        
+        /* ADMIN PANEL & STATUS LIGHT */
+        .admin-panel { background: #1a1a1a; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: none; border: 1px solid #444; }
+        .status-container { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; font-size: 12px; }
+        .status-light { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; background: #555; }
+        .status-online { background: #0dbd8b; box-shadow: 0 0 8px #0dbd8b; }
+        .status-offline { background: #ff4d4d; box-shadow: 0 0 8px #ff4d4d; }
+        
         .admin-stats { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 13px; text-align: center; }
         .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
         .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .post-user { font-weight: bold; color: var(--primary); }
-        .del-btn { color: #ff4d4d; background: none; border: none; font-size: 11px; cursor: pointer; font-weight: bold; }
+        .del-btn { color: #ff4d4d; background: none; border: none; font-size: 12px; cursor: pointer; font-weight: bold; }
         .time { font-size: 10px; color: #999; margin-left: 5px; }
-        .ip-tag { font-size: 9px; color: #ffa500; margin-left: 8px; font-weight: normal; }
+        .ip-tag { font-size: 9px; color: orange; margin-left: 10px; }
         #searchBar { background: #333; color: white; border: 1px solid #555; }
+
+        /* LOADING SPINNER STYLE */
+        .loader { text-align: center; color: #888; padding: 20px; font-style: italic; }
     </style>
 </head>
 <body>
@@ -33,16 +43,23 @@
         <input type="text" id="userInput" placeholder="Username">
         <input type="password" id="passInput" placeholder="Password">
         <button class="btn" id="authBtn" onclick="handleAuth()">Enter App</button>
-        <span onclick="toggleAuth()" style="text-align:center; display:block; cursor:pointer; font-size:14px; color:var(--accent); margin-top:10px;">Toggle Register/Login</span>
+        <span onclick="toggleAuth()" style="text-align:center; display:block; cursor:pointer; font-size:14px; color:var(--accent); margin-top:10px;">New here? Create account</span>
     </div>
 </div>
 
 <div id="app-view" style="display:none;">
     <div id="admin-controls" class="admin-panel">
-        <h3 style="margin-top:0; color:var(--primary);">Admin Dashboard</h3>
-        <div class="admin-stats">Database Volume: <span id="post-count">0</span> records</div>
-        <input type="text" id="searchBar" placeholder="Search Database/IPs..." onkeyup="filterFeed()">
-        <button onclick="loadFeed()" style="width:100%; padding:8px; cursor:pointer; background:#444; color:white; border:none; border-radius:4px;">Force Sync</button>
+        <div class="status-container">
+            <div id="status-dot" class="status-light"></div>
+            <span id="status-text">Shield: Checking...</span>
+        </div>
+        
+        <div class="admin-stats">
+            Database Volume: <span id="post-count" style="color:white; font-size:16px;">0</span> records
+        </div>
+
+        <input type="text" id="searchBar" placeholder="Search Matrix Database/IPs..." onkeyup="filterFeed()">
+        <button onclick="loadFeed()" style="width:100%; margin-top:5px; padding:8px; cursor:pointer; background:#444; color:white; border:none; border-radius:4px;">Force Sync</button>
     </div>
 
     <div class="card">
@@ -56,9 +73,9 @@
 
 <script>
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
-    const ADMIN_USER = "shailesh2164"; 
     let allPosts = []; 
     let isLoginMode = true;
+    const ADMIN_USER = "shailesh2164"; 
 
     window.onload = () => { if(localStorage.getItem('app_user')) showApp(); };
 
@@ -78,7 +95,7 @@
             body: JSON.stringify({ username: u, password: p })
         });
         if (res.ok) { localStorage.setItem('app_user', u); showApp(); }
-        else alert("Auth Failed");
+        else { alert("Auth Failed"); }
     }
 
     function showApp() {
@@ -90,9 +107,35 @@
     }
 
     async function loadFeed() {
-        const res = await fetch(`${SHIELD_URL}/api/feed`);
-        allPosts = await res.json();
-        renderPosts(allPosts);
+        const feedEl = document.getElementById('feed');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+
+        // Show waking message
+        feedEl.innerHTML = '<div class="loader">Waking up the Matrix Shield... please wait...</div>';
+
+        try {
+            const res = await fetch(`${SHIELD_URL}/api/feed`);
+            if(!res.ok) throw new Error();
+            
+            allPosts = await res.json();
+            
+            // Set Status to Online
+            if(statusDot) {
+                statusDot.className = "status-light status-online";
+                statusText.innerText = "Shield: Online";
+            }
+            
+            renderPosts(allPosts);
+        } catch (err) {
+            // Set Status to Offline
+            if(statusDot) {
+                statusDot.className = "status-light status-offline";
+                statusText.innerText = "Shield: Sleeping...";
+            }
+            feedEl.innerHTML = '<div class="loader" style="color:#ff4d4d;">Server is waking up. Retrying in 5 seconds...</div>';
+            setTimeout(loadFeed, 5000);
+        }
     }
 
     function renderPosts(postsToDisplay) {
@@ -102,14 +145,12 @@
 
         document.getElementById('feed').innerHTML = postsToDisplay.map(p => {
             const timeStr = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const parts = p.text.split(']: ');
+            const header = parts[0] || "";
+            const content = parts[1] || p.text;
             
-            // Format: "Username [IP:1.2.3.4]: Message"
-            const dataParts = p.text.split(']: ');
-            const headerInfo = dataParts[0] || "";
-            const content = dataParts[1] || p.text;
-            
-            const realUser = headerInfo.split(' [IP:')[0] || p.user;
-            const ipAddr = headerInfo.split(' [IP:')[1] || "Unknown";
+            const realUser = header.split(' [IP:')[0] || p.user;
+            const ipAddr = header.split(' [IP:')[1] || "Unknown";
 
             return `
                 <div class="post">
@@ -121,7 +162,7 @@
                         </div>
                         ${currentUser === ADMIN_USER ? `<button class="del-btn" onclick="deletePost('${p.id}')">REDACT</button>` : ''}
                     </div>
-                    <p style="margin:0; color:#262626; line-height:1.4;">${content}</p>
+                    <p style="margin:0; color:#262626;">${content}</p>
                 </div>
             `;
         }).join('');
@@ -134,7 +175,7 @@
     }
 
     async function deletePost(id) {
-        if(!confirm("ADMIN: Permenantly redact this record?")) return;
+        if(!confirm("ADMIN: Permanent redaction?")) return;
         const res = await fetch(`${SHIELD_URL}/api/delete/${id}`, { method: 'DELETE' });
         if(res.ok) loadFeed();
     }
@@ -143,13 +184,15 @@
         const text = document.getElementById('postText').value;
         const user = localStorage.getItem('app_user');
         if(!text.trim()) return;
-        await fetch(`${SHIELD_URL}/api/share`, {
+        const res = await fetch(`${SHIELD_URL}/api/share`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: user, message: text })
         });
-        document.getElementById('postText').value = "";
-        loadFeed();
+        if(res.ok) {
+            document.getElementById('postText').value = "";
+            loadFeed();
+        }
     }
 
     function logout() { localStorage.clear(); location.reload(); }
