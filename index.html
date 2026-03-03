@@ -79,15 +79,24 @@
     }
 
     async function loadFeed() {
-        const res = await fetch(`${SHIELD_URL}/api/feed`);
-        const posts = await res.json();
-        document.getElementById('feed').innerHTML = posts.map(p => `
+    const res = await fetch(`${SHIELD_URL}/api/feed`);
+    const posts = await res.json();
+    document.getElementById('feed').innerHTML = posts.map(p => {
+        // Convert the Matrix timestamp to a readable time
+        const time = new Date(p.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        return `
             <div class="post">
-                <span class="post-user">@${p.user}</span>
-                <p>${p.text}</p>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="post-user">@${p.user}</span>
+                    <span style="font-size: 10px; color: #999;">${time}</span>
+                </div>
+                <p style="margin: 8px 0 0 0; color: #262626;">${p.text}</p>
             </div>
-        `).join('');
-    }
+        `;
+    }).join('');
+}
+
 
     async function sharePost() {
         const text = document.getElementById('postText').value;
