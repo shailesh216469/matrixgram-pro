@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MatrixGram Stealth Control</title>
+    <title>MatrixGram Social Pro</title>
     <style>
         :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
@@ -13,23 +13,22 @@
         input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
         
-        /* ADMIN PANEL & STATUS LIGHT */
-        .admin-panel { background: #1a1a1a; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: none; border: 1px solid #444; }
+        /* PROFILE BOX */
+        .profile-card { background: #f0fdf9; border: 1px solid var(--primary); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
+        .user-bio { font-size: 11px; color: #666; margin-top: 2px; font-style: italic; }
+
+        /* ADMIN PANEL */
+        .admin-panel { background: #1a1a1a; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: none; }
         .status-container { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; font-size: 12px; }
         .status-light { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; background: #555; }
         .status-online { background: #0dbd8b; box-shadow: 0 0 8px #0dbd8b; }
         .status-offline { background: #ff4d4d; box-shadow: 0 0 8px #ff4d4d; }
         
-        .admin-stats { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 13px; text-align: center; }
         .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
         .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .post-user { font-weight: bold; color: var(--primary); }
-        .del-btn { color: #ff4d4d; background: none; border: none; font-size: 12px; cursor: pointer; font-weight: bold; }
-        .time { font-size: 10px; color: #999; margin-left: 5px; }
-        .ip-tag { font-size: 9px; color: orange; margin-left: 10px; }
-        #searchBar { background: #333; color: white; border: 1px solid #555; }
-
-        /* LOADING SPINNER STYLE */
+        .del-btn { color: #ff4d4d; background: none; border: none; font-size: 11px; cursor: pointer; font-weight: bold; }
+        .time { font-size: 10px; color: #999; }
         .loader { text-align: center; color: #888; padding: 20px; font-style: italic; }
     </style>
 </head>
@@ -49,20 +48,19 @@
 
 <div id="app-view" style="display:none;">
     <div id="admin-controls" class="admin-panel">
-        <div class="status-container">
-            <div id="status-dot" class="status-light"></div>
-            <span id="status-text">Shield: Checking...</span>
-        </div>
-        
-        <div class="admin-stats">
-            Database Volume: <span id="post-count" style="color:white; font-size:16px;">0</span> records
-        </div>
+        <div class="status-container"><div id="status-dot" class="status-light"></div><span id="status-text">Checking...</span></div>
+        <input type="text" id="searchBar" placeholder="Search Database/IPs..." onkeyup="filterFeed()" style="background:#333; color:white; border:none;">
+    </div>
 
-        <input type="text" id="searchBar" placeholder="Search Matrix Database/IPs..." onkeyup="filterFeed()">
-        <button onclick="loadFeed()" style="width:100%; margin-top:5px; padding:8px; cursor:pointer; background:#444; color:white; border:none; border-radius:4px;">Force Sync</button>
+    <div id="profile-editor" class="profile-card">
+        <h4 style="margin:0 0 10px 0;">Update My Profile</h4>
+        <input type="text" id="bioInput" placeholder="Write a short bio...">
+        <button class="btn" onclick="updateProfile()" style="background:var(--primary);">Save Bio</button>
+        <button onclick="toggleProfile()" style="background:none; border:none; width:100%; margin-top:5px; color:#666; cursor:pointer;">Cancel</button>
     </div>
 
     <div class="card">
+        <button onclick="toggleProfile()" style="float:right; background:none; border:none; color:var(--accent); cursor:pointer; font-size:12px;">Edit Profile</button>
         <textarea id="postText" rows="2" placeholder="What's on your mind?"></textarea>
         <button class="btn" onclick="sharePost()">Post</button>
     </div>
@@ -73,9 +71,10 @@
 
 <script>
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
-    let allPosts = []; 
-    let isLoginMode = true;
     const ADMIN_USER = "shailesh2164"; 
+    let allPosts = []; 
+    let userProfiles = {}; 
+    let isLoginMode = true;
 
     window.onload = () => { if(localStorage.getItem('app_user')) showApp(); };
 
@@ -95,74 +94,87 @@
             body: JSON.stringify({ username: u, password: p })
         });
         if (res.ok) { localStorage.setItem('app_user', u); showApp(); }
-        else { alert("Auth Failed"); }
+        else alert("Auth Failed");
     }
 
     function showApp() {
-        const currentUser = localStorage.getItem('app_user');
         document.getElementById('login-view').style.display = 'none';
         document.getElementById('app-view').style.display = 'block';
-        if(currentUser === ADMIN_USER) document.getElementById('admin-controls').style.display = 'block';
+        if(localStorage.getItem('app_user') === ADMIN_USER) document.getElementById('admin-controls').style.display = 'block';
+        loadFeed();
+    }
+
+    function toggleProfile() {
+        const el = document.getElementById('profile-editor');
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function updateProfile() {
+        const user = localStorage.getItem('app_user');
+        const bio = document.getElementById('bioInput').value;
+        if(!bio) return;
+        await fetch(`${SHIELD_URL}/api/share`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: "SYSTEM_INFO", message: `[BIO] ${user} | ${bio}` })
+        });
+        alert("Bio Updated!");
+        toggleProfile();
         loadFeed();
     }
 
     async function loadFeed() {
         const feedEl = document.getElementById('feed');
-        const statusDot = document.getElementById('status-dot');
-        const statusText = document.getElementById('status-text');
-
-        // Show waking message
-        feedEl.innerHTML = '<div class="loader">Waking up the Matrix Shield... please wait...</div>';
-
+        feedEl.innerHTML = '<div class="loader">Syncing with Matrix...</div>';
         try {
             const res = await fetch(`${SHIELD_URL}/api/feed`);
-            if(!res.ok) throw new Error();
-            
             allPosts = await res.json();
             
-            // Set Status to Online
-            if(statusDot) {
-                statusDot.className = "status-light status-online";
-                statusText.innerText = "Shield: Online";
-            }
-            
-            renderPosts(allPosts);
+            // Scan for bios before rendering
+            userProfiles = {};
+            allPosts.forEach(p => {
+                if(p.text.includes("[BIO]")) {
+                    const parts = p.text.split('[BIO] ')[1].split(' | ');
+                    userProfiles[parts[0]] = parts[1];
+                }
+            });
+
+            document.getElementById('status-dot').className = "status-light status-online";
+            document.getElementById('status-text').innerText = "Shield Online";
+            renderPosts(allPosts.filter(p => !p.text.includes("[BIO]")));
         } catch (err) {
-            // Set Status to Offline
-            if(statusDot) {
-                statusDot.className = "status-light status-offline";
-                statusText.innerText = "Shield: Sleeping...";
-            }
-            feedEl.innerHTML = '<div class="loader" style="color:#ff4d4d;">Server is waking up. Retrying in 5 seconds...</div>';
+            document.getElementById('status-dot').className = "status-light status-offline";
+            document.getElementById('status-text').innerText = "Shield Sleeping...";
             setTimeout(loadFeed, 5000);
         }
     }
 
     function renderPosts(postsToDisplay) {
         const currentUser = localStorage.getItem('app_user');
-        const countEl = document.getElementById('post-count');
-        if(countEl) countEl.innerText = allPosts.length;
-
         document.getElementById('feed').innerHTML = postsToDisplay.map(p => {
             const timeStr = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const parts = p.text.split(']: ');
-            const header = parts[0] || "";
-            const content = parts[1] || p.text;
-            
+            const dataParts = p.text.split(']: ');
+            const header = dataParts[0] || "";
+            const content = dataParts[1] || p.text;
             const realUser = header.split(' [IP:')[0] || p.user;
-            const ipAddr = header.split(' [IP:')[1] || "Unknown";
+            const ipAddr = header.split(' [IP:')[1] || "";
+            
+            const bio = userProfiles[realUser] || "Member";
 
             return `
                 <div class="post">
                     <div class="post-header">
                         <div>
                             <span class="post-user">@${realUser}</span>
-                            <span class="time">${timeStr}</span>
-                            ${currentUser === ADMIN_USER ? `<span class="ip-tag">IP: ${ipAddr}</span>` : ''}
+                            <div class="user-bio">${bio}</div>
                         </div>
-                        ${currentUser === ADMIN_USER ? `<button class="del-btn" onclick="deletePost('${p.id}')">REDACT</button>` : ''}
+                        <div style="text-align:right">
+                            <span class="time">${timeStr}</span>
+                            ${currentUser === ADMIN_USER ? `<div style="font-size:9px; color:orange;">${ipAddr}</div>` : ''}
+                            ${currentUser === ADMIN_USER ? `<button class="del-btn" onclick="deletePost('${p.id}')">REDACT</button>` : ''}
+                        </div>
                     </div>
-                    <p style="margin:0; color:#262626;">${content}</p>
+                    <p style="margin:8px 0 0 0; color:#262626; line-height:1.4;">${content}</p>
                 </div>
             `;
         }).join('');
@@ -170,29 +182,26 @@
 
     function filterFeed() {
         const query = document.getElementById('searchBar').value.toLowerCase();
-        const filtered = allPosts.filter(p => p.text.toLowerCase().includes(query));
-        renderPosts(filtered);
+        renderPosts(allPosts.filter(p => !p.text.includes("[BIO]") && p.text.toLowerCase().includes(query)));
     }
 
     async function deletePost(id) {
-        if(!confirm("ADMIN: Permanent redaction?")) return;
-        const res = await fetch(`${SHIELD_URL}/api/delete/${id}`, { method: 'DELETE' });
-        if(res.ok) loadFeed();
+        if(confirm("Redact permanently?")) {
+            await fetch(`${SHIELD_URL}/api/delete/${id}`, { method: 'DELETE' });
+            loadFeed();
+        }
     }
 
     async function sharePost() {
         const text = document.getElementById('postText').value;
-        const user = localStorage.getItem('app_user');
         if(!text.trim()) return;
-        const res = await fetch(`${SHIELD_URL}/api/share`, {
+        await fetch(`${SHIELD_URL}/api/share`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: user, message: text })
+            body: JSON.stringify({ username: localStorage.getItem('app_user'), message: text })
         });
-        if(res.ok) {
-            document.getElementById('postText').value = "";
-            loadFeed();
-        }
+        document.getElementById('postText').value = "";
+        loadFeed();
     }
 
     function logout() { localStorage.clear(); location.reload(); }
