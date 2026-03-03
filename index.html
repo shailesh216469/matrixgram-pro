@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MatrixGram Social Elite</title>
+    <title>MatrixGram Stealth</title>
     <style>
         :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
@@ -11,8 +11,8 @@
         .top-right-nav { position: absolute; top: 10px; right: 15px; cursor: pointer; z-index: 101; }
         .nav-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; background: #eee; }
         #app-view, #login-view { width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; }
-        .card { background: white; border: 1px solid #dbdbdb; padding: 20px; border-radius: 8px; margin-bottom: 20px; position: relative; }
-        input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
+        .card { background: white; border: 1px solid #dbdbdb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
         #profile-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         .form-group { margin-bottom: 15px; }
@@ -22,7 +22,7 @@
         .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
         .post-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .post-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px solid #f5f5f5; }
-        .like-btn { border: 1px solid #ffccd5; border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 13px; font-weight: bold; transition: all 0.2s; }
+        .like-btn { border: 1px solid #ffccd5; border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 13px; font-weight: bold; }
         .admin-panel { background: #1a1a1a; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #555; margin-right: 5px; }
         .online { background: #0dbd8b; box-shadow: 0 0 8px #0dbd8b; }
@@ -66,10 +66,10 @@
 </div>
 
 <div id="profile-page">
-    <button onclick="closeProfilePage()" style="background:none; border:none; color:var(--accent); cursor:pointer;">← Back</button>
+    <button onclick="closeProfilePage()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">← Back</button>
     <h2>Account Settings</h2>
     <div class="form-group"><label>Display Name</label><input type="text" id="edit-name"></div>
-    <div class="form-group"><label>Username</label><input type="text" id="edit-username" readonly></div>
+    <div class="form-group"><label>Username</label><input type="text" id="edit-username" readonly style="background:#f0f0f0;"></div>
     <div class="form-group"><label>Avatar URL</label><input type="text" id="edit-dp"></div>
     <div class="form-group"><label>Bio</label><textarea id="edit-bio"></textarea></div>
     <div class="form-group"><label>DOB</label><input type="date" id="edit-dob"></div>
@@ -87,11 +87,15 @@
 
     window.onload = () => { if(localStorage.getItem('app_user')) showApp(); };
 
-    function toggleAuth() { document.getElementById('auth-title').innerText = "Register"; }
+    function toggleAuth() {
+        const title = document.getElementById('auth-title');
+        title.innerText = title.innerText === "Login" ? "Register" : "Login";
+    }
 
     async function handleAuth() {
         const u = document.getElementById('userInput').value, p = document.getElementById('passInput').value;
-        const res = await fetch(`${SHIELD_URL}/api/login`, {
+        const isLogin = document.getElementById('auth-title').innerText === "Login";
+        const res = await fetch(`${SHIELD_URL}/api/${isLogin ? 'login' : 'register'}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: u, password: p })
@@ -121,13 +125,12 @@
         const u = localStorage.getItem('app_user');
         const msg = `[FULL_PROF] ${u} | ${document.getElementById('edit-name').value} | ${document.getElementById('edit-bio').value} | ${document.getElementById('edit-dp').value} | ${document.getElementById('edit-dob').value} | ${document.getElementById('edit-city').value} | 0 | ${document.getElementById('edit-country').value}`;
         await fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: "SYS_DATA", message: msg }) });
-        closeProfilePage(); loadFeed();
+        alert("Synced!"); closeProfilePage(); loadFeed();
     }
 
     async function sendLike(id) {
         const user = localStorage.getItem('app_user');
-        if (postLikes[id] && postLikes[id].has(user)) return; // Prevent double click
-        
+        if (postLikes[id] && postLikes[id].has(user)) return;
         await fetch(`${SHIELD_URL}/api/share`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -136,9 +139,19 @@
         loadFeed();
     }
 
+    async function trackRead(id) {
+        const user = localStorage.getItem('app_user');
+        if(user === ADMIN_USER || !id) return;
+        fetch(`${SHIELD_URL}/api/share`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: "SYS_READ", message: `[READ] ${id} | ${user}` })
+        });
+    }
+
     async function loadFeed() {
         const feedEl = document.getElementById('feed');
-        feedEl.innerHTML = '<div class="loader">Syncing...</div>';
+        feedEl.innerHTML = '<div class="loader">Accessing Matrix...</div>';
         try {
             const res = await fetch(`${SHIELD_URL}/api/feed`);
             allPosts = await res.json();
@@ -147,56 +160,91 @@
             allPosts.forEach(p => {
                 if(p.text.includes("[FULL_PROF]")) {
                     const parts = p.text.split('[FULL_PROF] ')[1].split(' | ');
-                    userProfiles[parts[0]] = { name: parts[1], bio: parts[2], avatar: parts[3] };
+                    userProfiles[parts[0]] = { name: parts[1], bio: parts[2], avatar: parts[3], city: parts[5], country: parts[7] };
                     if(parts[0] === localStorage.getItem('app_user')) document.getElementById('nav-avatar-img').src = parts[3] || `https://ui-avatars.com/api/?name=${parts[0]}`;
                 }
                 if(p.text.includes("[LIKE]")) {
                     const parts = p.text.split('[LIKE] ')[1].split(' | ');
                     if(!postLikes[parts[0]]) postLikes[parts[0]] = new Set();
-                    postLikes[parts[0]].add(parts[1]);
+                    if(parts[1]) postLikes[parts[0]].add(parts[1]);
+                }
+                if(p.text.includes("[READ]")) {
+                    const parts = p.text.split('[READ] ')[1].split(' | ');
+                    if(!postViews[parts[0]]) postViews[parts[0]] = new Set();
+                    if(parts[1]) postViews[parts[0]].add(parts[1]);
                 }
             });
 
             document.getElementById('dot').className = "status-dot online";
-            renderPosts(allPosts.filter(p => !p.text.includes("[FULL_PROF]") && !p.text.includes("[LIKE]")));
+            document.getElementById('status-text').innerText = "Shield Online";
+            
+            // STRICT FILTERING: Hide system messages from users
+            const visible = allPosts.filter(p => 
+                !p.text.includes("[FULL_PROF]") && 
+                !p.text.includes("[LIKE]") && 
+                !p.text.includes("[READ]") &&
+                !["SYS_DATA", "SYS_LIKE", "SYS_READ", "SYS_PROF"].includes(p.user)
+            );
+            
+            renderPosts(visible);
+            if(visible.length > 0) trackRead(visible[0].id);
         } catch (err) { setTimeout(loadFeed, 6000); }
     }
 
     function renderPosts(posts) {
         const curr = localStorage.getItem('app_user');
         document.getElementById('feed').innerHTML = posts.map(p => {
+            const time = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             const parts = p.text.split(']: '), head = parts[0] || "", content = parts[1] || p.text;
-            const user = head.split(' [IP:')[0] || p.user;
+            const user = head.split(' [IP:')[0] || p.user, ip = head.split(' [IP:')[1] || "";
             const prof = userProfiles[user] || { name: user, avatar: `https://ui-avatars.com/api/?name=${user}` };
             
             const likesSet = postLikes[p.id] || new Set();
             const hasLiked = likesSet.has(curr);
+            const views = postViews[p.id] ? postViews[p.id].size : 0;
 
             return `
                 <div class="post">
                     <div class="post-header">
                         <div style="display:flex; align-items:center;">
-                            <img src="${prof.avatar}" class="avatar-img">
-                            <div><span class="post-user">${prof.name || user}</span></div>
+                            <img src="${prof.avatar}" class="avatar-img" onerror="this.src='https://ui-avatars.com/api/?name=${user}'">
+                            <div>
+                                <span class="post-user">${prof.name || user}</span>
+                                <div class="user-bio">${prof.city ? '📍 '+prof.city : ''}</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right">
+                            <span style="font-size:10px; color:#999;">${time}</span>
+                            ${curr === ADMIN_USER ? `<div style="font-size:8px; color:orange;">${ip}</div>` : ''}
                         </div>
                     </div>
-                    <p>${content}</p>
+                    <p style="margin:12px 0;">${content}</p>
                     <div class="post-actions">
                         <button class="like-btn" onclick="sendLike('${p.id}')" 
                             style="background:${hasLiked ? '#ff4d4d' : '#fff'}; color:${hasLiked ? '#fff' : '#ff4d4d'}">
                             ❤️ ${likesSet.size}
                         </button>
+                        ${curr === ADMIN_USER ? `<span style="font-size:10px; color:#999;">👁️ ${views} views</span>` : ''}
                     </div>
                 </div>
             `;
         }).join('');
     }
 
+    function filterFeed() {
+        const q = document.getElementById('searchBar').value.toLowerCase();
+        const visible = allPosts.filter(p => !p.text.includes("[FULL_PROF]") && !p.text.includes("[LIKE]") && !p.text.includes("[READ]"));
+        renderPosts(visible.filter(p => p.text.toLowerCase().includes(q)));
+    }
+
     async function sharePost() {
         const t = document.getElementById('postText').value;
+        if(!t.trim()) return;
         await fetch(`${SHIELD_URL}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: localStorage.getItem('app_user'), message: t }) });
         document.getElementById('postText').value = ""; loadFeed();
     }
+
+    function logout() { localStorage.clear(); location.reload(); }
 </script>
 </body>
 </html>
