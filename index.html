@@ -75,26 +75,34 @@
     }
 
     async function loadFeed() {
-        const res = await fetch(`${SHIELD_URL}/api/feed`);
-        const posts = await res.json();
-        const currentUser = localStorage.getItem('app_user');
+    const res = await fetch(`${SHIELD_URL}/api/feed`);
+    const posts = await res.json();
+    const currentUser = localStorage.getItem('app_user');
+    
+    document.getElementById('feed').innerHTML = posts.map(p => {
+        const timeStr = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         
-        document.getElementById('feed').innerHTML = posts.map(p => {
-            const timeStr = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            return `
-                <div class="post">
-                    <div class="post-header">
-                        <div>
-                            <span class="post-user">@${p.user}</span>
-                            <span class="time">${timeStr}</span>
-                        </div>
-                        ${currentUser === 'shailesh2164' ? `<button class="del-btn" onclick="deletePost('${p.id}')">Delete</button>` : ''}
+        // FIX: Split the text at the first colon to get the real username
+        // Example message: "Sahil: Hii" -> name is "Sahil", text is "Hii"
+        const parts = p.text.split(': ');
+        const realUser = parts.length > 1 ? parts[0] : p.user; 
+        const messageContent = parts.length > 1 ? parts.slice(1).join(': ') : p.text;
+
+        return `
+            <div class="post">
+                <div class="post-header">
+                    <div>
+                        <span class="post-user">@${realUser}</span>
+                        <span class="time">${timeStr}</span>
                     </div>
-                    <p style="margin:0;">${p.text}</p>
+                    ${currentUser === 'shailesh2164' ? `<button class="del-btn" onclick="deletePost('${p.id}')">Delete</button>` : ''}
                 </div>
-            `;
-        }).join('');
-    }
+                <p style="margin:0;">${messageContent}</p>
+            </div>
+        `;
+    }).join('');
+}
+
 
     async function deletePost(eventId) {
         if(!confirm("Delete this message?")) return;
