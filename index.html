@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MatrixGram Stealth Control</title>
+    <title>MatrixGram Admin Panel</title>
     <style>
         :root { --primary: #0dbd8b; --accent: #0095f6; --bg: #fafafa; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
@@ -12,19 +12,15 @@
         .card { background: white; border: 1px solid #dbdbdb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        
-        /* ADMIN PANEL STYLING */
-        .admin-panel { background: #1a1a1a; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: none; border: 1px solid #444; }
+        .admin-panel { background: #1a1a1a; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: none; }
         .admin-stats { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 13px; text-align: center; }
-        
         .post { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 15px; padding: 15px; }
         .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .post-user { font-weight: bold; color: var(--primary); }
-        .del-btn { color: #ff4d4d; background: none; border: none; font-size: 12px; cursor: pointer; font-weight: bold; }
+        .del-btn { color: #ff4d4d; background: none; border: none; font-size: 11px; cursor: pointer; font-weight: bold; }
         .time { font-size: 10px; color: #999; margin-left: 5px; }
-        .toggle-link { text-align: center; font-size: 14px; color: var(--accent); cursor: pointer; display: block; margin-top: 10px; }
+        .ip-tag { font-size: 9px; color: #ffa500; margin-left: 8px; font-weight: normal; }
         #searchBar { background: #333; color: white; border: 1px solid #555; }
-        #searchBar::placeholder { color: #aaa; }
     </style>
 </head>
 <body>
@@ -37,20 +33,16 @@
         <input type="text" id="userInput" placeholder="Username">
         <input type="password" id="passInput" placeholder="Password">
         <button class="btn" id="authBtn" onclick="handleAuth()">Enter App</button>
-        <span class="toggle-link" onclick="toggleAuth()">New here? Create account</span>
+        <span onclick="toggleAuth()" style="text-align:center; display:block; cursor:pointer; font-size:14px; color:var(--accent); margin-top:10px;">Toggle Register/Login</span>
     </div>
 </div>
 
 <div id="app-view" style="display:none;">
     <div id="admin-controls" class="admin-panel">
         <h3 style="margin-top:0; color:var(--primary);">Admin Dashboard</h3>
-        
-        <div class="admin-stats">
-            Database Volume: <span id="post-count" style="color:white; font-size:16px;">0</span> records
-        </div>
-
-        <input type="text" id="searchBar" placeholder="Search Matrix Database..." onkeyup="filterFeed()">
-        <button onclick="loadFeed()" style="width:100%; margin-top:5px; padding:8px; cursor:pointer; background:#444; color:white; border:none; border-radius:4px;">Refresh Database</button>
+        <div class="admin-stats">Database Volume: <span id="post-count">0</span> records</div>
+        <input type="text" id="searchBar" placeholder="Search Database/IPs..." onkeyup="filterFeed()">
+        <button onclick="loadFeed()" style="width:100%; padding:8px; cursor:pointer; background:#444; color:white; border:none; border-radius:4px;">Force Sync</button>
     </div>
 
     <div class="card">
@@ -64,9 +56,9 @@
 
 <script>
     const SHIELD_URL = "https://matrixgram-pro.onrender.com"; 
+    const ADMIN_USER = "shailesh2164"; 
     let allPosts = []; 
     let isLoginMode = true;
-    const ADMIN_USER = "shailesh2164"; // Your admin username
 
     window.onload = () => { if(localStorage.getItem('app_user')) showApp(); };
 
@@ -86,18 +78,14 @@
             body: JSON.stringify({ username: u, password: p })
         });
         if (res.ok) { localStorage.setItem('app_user', u); showApp(); }
-        else { alert("Auth Failed"); }
+        else alert("Auth Failed");
     }
 
     function showApp() {
         const currentUser = localStorage.getItem('app_user');
         document.getElementById('login-view').style.display = 'none';
         document.getElementById('app-view').style.display = 'block';
-        
-        // Security check for Admin Panel
-        if(currentUser === ADMIN_USER) {
-            document.getElementById('admin-controls').style.display = 'block';
-        }
+        if(currentUser === ADMIN_USER) document.getElementById('admin-controls').style.display = 'block';
         loadFeed();
     }
 
@@ -109,16 +97,19 @@
 
     function renderPosts(postsToDisplay) {
         const currentUser = localStorage.getItem('app_user');
-        
-        // Update counter (only visible if admin panel is showing)
         const countEl = document.getElementById('post-count');
         if(countEl) countEl.innerText = allPosts.length;
 
         document.getElementById('feed').innerHTML = postsToDisplay.map(p => {
             const timeStr = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const parts = p.text.split(': ');
-            const realUser = parts.length > 1 ? parts[0] : p.user; 
-            const messageContent = parts.length > 1 ? parts.slice(1).join(': ') : p.text;
+            
+            // Format: "Username [IP:1.2.3.4]: Message"
+            const dataParts = p.text.split(']: ');
+            const headerInfo = dataParts[0] || "";
+            const content = dataParts[1] || p.text;
+            
+            const realUser = headerInfo.split(' [IP:')[0] || p.user;
+            const ipAddr = headerInfo.split(' [IP:')[1] || "Unknown";
 
             return `
                 <div class="post">
@@ -126,10 +117,11 @@
                         <div>
                             <span class="post-user">@${realUser}</span>
                             <span class="time">${timeStr}</span>
+                            ${currentUser === ADMIN_USER ? `<span class="ip-tag">IP: ${ipAddr}</span>` : ''}
                         </div>
                         ${currentUser === ADMIN_USER ? `<button class="del-btn" onclick="deletePost('${p.id}')">REDACT</button>` : ''}
                     </div>
-                    <p style="margin:0; color:#262626;">${messageContent}</p>
+                    <p style="margin:0; color:#262626; line-height:1.4;">${content}</p>
                 </div>
             `;
         }).join('');
@@ -142,7 +134,7 @@
     }
 
     async function deletePost(id) {
-        if(!confirm("ADMIN: Redact this record permanently?")) return;
+        if(!confirm("ADMIN: Permenantly redact this record?")) return;
         const res = await fetch(`${SHIELD_URL}/api/delete/${id}`, { method: 'DELETE' });
         if(res.ok) loadFeed();
     }
